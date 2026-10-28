@@ -202,17 +202,20 @@ namespace {
                       menu_selector(IBMenu::onToggleLog));
 
             m_opLabel = addLabel("", "bigFont.fnt", 0.38f, {26.f, 58.f}, {0.f, 0.5f});
+            
+            // BOTONES DE OPACIDAD SEPARADOS
             auto minus = CCMenuItemSpriteExtra::create(
                 ButtonSprite::create("-", 28, true, "bigFont.fnt", "GJ_button_01.png", 26.f, 0.7f),
                 nullptr, this, menu_selector(IBMenu::onOpacity));
             minus->setTag(-1);
-            minus->setPosition({kW - 80.f, 58.f});
+            minus->setPosition({kW - 95.f, 58.f}); // Movido mas a la izquierda
             m_menu->addChild(minus);
+            
             auto plus = CCMenuItemSpriteExtra::create(
                 ButtonSprite::create("+", 28, true, "bigFont.fnt", "GJ_button_01.png", 26.f, 0.7f),
                 nullptr, this, menu_selector(IBMenu::onOpacity));
             plus->setTag(1);
-            plus->setPosition({kW - 40.f, 58.f});
+            plus->setPosition({kW - 30.f, 58.f}); // Movido mas a la derecha
             m_menu->addChild(plus);
 
             // --- cerrar ---
@@ -229,15 +232,14 @@ namespace {
         void refresh() {
             const int s = ib::S().stage;
 
-            // Pintar de verde el boton seleccionado y hacerlo un poquito mas grande
             for (int i = 0; i < ib::kStageCount; ++i) {
                 if (m_stageBtns[i]) {
                     if (i == s) {
-                        m_stageBtns[i]->setColor(ccc3(100, 255, 100)); // Color verde
-                        m_stageBtns[i]->setScale(1.1f);                // Efecto "pop"
+                        m_stageBtns[i]->setColor(ccc3(100, 255, 100)); 
+                        m_stageBtns[i]->setScale(1.1f);                
                     } else {
-                        m_stageBtns[i]->setColor(ccc3(255, 255, 255)); // Color blanco normal
-                        m_stageBtns[i]->setScale(1.0f);                // Tamano normal
+                        m_stageBtns[i]->setColor(ccc3(255, 255, 255)); 
+                        m_stageBtns[i]->setScale(1.0f);                
                     }
                 }
             }
@@ -247,7 +249,6 @@ namespace {
             m_opLabel->setString(op.c_str());
         }
 
-        // ----- callbacks -----
         void onStage(CCObject* sender) {
             ib::setStage(static_cast<CCNode*>(sender)->getTag());
             this->refresh();
@@ -284,13 +285,12 @@ namespace {
         void keyBackClicked() override { this->onClose(nullptr); }
 
     private:
-        // Ancho del menu aumentado a 400 para que quepan los 6 botones
         static constexpr float kW = 400.f;
         static constexpr float kH = 250.f;
         static constexpr float kStageY = 168.f;
 
-        // Centra los 6 botones con una separacion de 65 pixeles
-        static float stageX(int i) { return kW / 2.f + (i - 2.5f) * 65.f; }
+        // AUMENTAMOS LA SEPARACION DE LOS BOTONES DE ETAPA A 72 PIXELES
+        static float stageX(int i) { return kW / 2.f + (i - 2.5f) * 72.f; }
 
         CCLabelBMFont* addLabel(const char* text, const char* font, float scale, CCPoint pos,
                                 CCPoint anchor = {0.5f, 0.5f}) {
@@ -312,7 +312,7 @@ namespace {
 
         CCNode* m_panel = nullptr;
         CCMenu* m_menu = nullptr;
-        CCMenuItemSpriteExtra* m_stageBtns[6] = {nullptr}; // Arreglo cambiado a 6
+        CCMenuItemSpriteExtra* m_stageBtns[6] = {nullptr}; 
         CCLabelBMFont* m_desc = nullptr;
         CCLabelBMFont* m_opLabel = nullptr;
     };
