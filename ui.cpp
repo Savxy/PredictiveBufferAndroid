@@ -68,8 +68,7 @@ namespace {
         }
 
         void refresh() {
-            // SAFE MODE: Si esta activo, oculta el boton por completo
-            bool show = ib::cfgShowButton() && !ib::cfgSafeMode();
+            bool show = ib::cfgShowButton();
             this->setVisible(show);
             
             if (show) {
@@ -83,7 +82,7 @@ namespace {
         }
 
         void flash() {
-            if (!ib::cfgShowBg() || ib::cfgSafeMode()) return;
+            if (!ib::cfgShowBg()) return;
             m_flash = 0.2f;
             m_bg->setColor({30, 150, 60});
         }
@@ -100,7 +99,7 @@ namespace {
         }
 
         bool ccTouchBegan(CCTouch* touch, CCEvent*) override {
-            if (!this->isVisible() || !ib::cfgShowButton() || ib::cfgSafeMode()) return false;
+            if (!this->isVisible() || !ib::cfgShowButton()) return false;
             const CCPoint local = this->convertToNodeSpace(touch->getLocation());
             if (local.x < 0.f || local.y < 0.f || local.x > kW || local.y > kH) return false;
             m_dragging = false;
@@ -202,13 +201,11 @@ namespace {
 
             m_desc = addLabel("", "chatFont.fnt", 0.8f, {kW / 2.f, kStageY - 30.f});
 
-            // --- OPCIONES (Alineadas naturalmente) ---
-            addToggle("Floating button (in level)", 140.f, ib::cfgShowButton(),
+            // --- OPCIONES ---
+            addToggle("Floating button (in level)", 130.f, ib::cfgShowButton(),
                       menu_selector(IBMenu::onToggleHud));
-            addToggle("Floating background", 114.f, ib::cfgShowBg(),
+            addToggle("Floating background", 104.f, ib::cfgShowBg(),
                       menu_selector(IBMenu::onToggleBg));
-            addToggle("Safe mode (hide mod)", 88.f, ib::cfgSafeMode(),
-                      menu_selector(IBMenu::onToggleSafe));
 
             m_opLabel = addLabel("", "bigFont.fnt", 0.38f, {26.f, 58.f}, {0.f, 0.5f});
             
@@ -270,12 +267,6 @@ namespace {
         void onToggleBg(CCObject* sender) {
             const bool now = !static_cast<CCMenuItemToggler*>(sender)->isToggled();
             ib::cfgSetShowBg(now);
-            ib::onStageChanged();
-        }
-
-        void onToggleSafe(CCObject* sender) {
-            const bool now = !static_cast<CCMenuItemToggler*>(sender)->isToggled();
-            ib::cfgSetSafeMode(now);
             ib::onStageChanged();
         }
 
