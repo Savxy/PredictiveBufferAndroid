@@ -13,9 +13,6 @@ using namespace geode::prelude;
 
 namespace {
 
-    // =======================================================================
-    //  Boton flotante dentro del nivel
-    // =======================================================================
     class IBHud : public CCLayer {
     public:
         static IBHud* s_inst;
@@ -71,15 +68,22 @@ namespace {
         }
 
         void refresh() {
-            const int a = ib::cfgOpacity() * 255 / 100;
-            this->setVisible(ib::cfgShowButton());
-            m_bg->setOpacity(static_cast<unsigned char>(a * 3 / 4));
-            m_label->setOpacity(static_cast<unsigned char>(a));
-            std::string text = std::string("IB ") + ib::kStages[ib::S().stage].label;
-            m_label->setString(text.c_str());
+            // SAFE MODE: Si esta activo, oculta el boton por completo
+            bool show = ib::cfgShowButton() && !ib::cfgSafeMode();
+            this->setVisible(show);
+            
+            if (show) {
+                const int a = ib::cfgOpacity() * 255 / 100;
+                m_bg->setVisible(ib::cfgShowBg());
+                m_bg->setOpacity(static_cast<unsigned char>(a * 3 / 4));
+                m_label->setOpacity(static_cast<unsigned char>(a));
+                std::string text = std::string("IB ") + ib::kStages[ib::S().stage].label;
+                m_label->setString(text.c_str());
+            }
         }
 
         void flash() {
+            if (!ib::cfgShowBg() || ib::cfgSafeMode()) return;
             m_flash = 0.2f;
             m_bg->setColor({30, 150, 60});
         }
@@ -96,7 +100,7 @@ namespace {
         }
 
         bool ccTouchBegan(CCTouch* touch, CCEvent*) override {
-            if (!this->isVisible() || !ib::cfgShowButton()) return false;
+            if (!this->isVisible() || !ib::cfgShowButton() || ib::cfgSafeMode()) return false;
             const CCPoint local = this->convertToNodeSpace(touch->getLocation());
             if (local.x < 0.f || local.y < 0.f || local.x > kW || local.y > kH) return false;
             m_dragging = false;
@@ -142,9 +146,6 @@ namespace {
 
     IBHud* IBHud::s_inst = nullptr;
 
-    // =======================================================================
-    //  Menu completo (popup)
-    // =======================================================================
     class IBMenu : public CCLayerColor {
     public:
         static IBMenu* create() {
@@ -167,12 +168,19 @@ namespace {
             m_panel->setPosition({(win.width - kW) / 2.f, (win.height - kH) / 2.f});
             this->addChild(m_panel);
 
-            auto border = CCLayerColor::create(ccc4(90, 200, 120, 255), kW + 4.f, kH + 4.f);
-            border->setPosition({-2.f, -2.f});
+            // --- FONDO REDONDEADO (ESTILO GD) ---
+            auto border = CCScale9Sprite::create("GJ_square01.png");
+            border->setContentSize({kW + 6.f, kH + 6.f});
+            border->setColor({90, 200, 120}); // Verde
+            border->setPosition({kW / 2.f, kH / 2.f});
             m_panel->addChild(border);
 
-            auto bg = CCLayerColor::create(ccc4(18, 22, 30, 245), kW, kH);
+            auto bg = CCScale9Sprite::create("GJ_square01.png");
+            bg->setContentSize({kW, kH});
+            bg->setColor({18, 22, 30}); // Oscuro
+            bg->setPosition({kW / 2.f, kH / 2.f});
             m_panel->addChild(bg);
+            // -----------------------------------
 
             addLabel("Predictive Input Buffer", "goldFont.fnt", 0.62f, {kW / 2.f, kH - 22.f});
             addLabel("Stage  (ticks: All / Wave)", "chatFont.fnt", 0.85f, {kW / 2.f, kH - 48.f});
@@ -182,7 +190,6 @@ namespace {
             m_menu->setTouchPriority(-701);
             m_panel->addChild(m_menu);
 
-            // --- botones de etapa ---
             for (int i = 0; i < ib::kStageCount; ++i) {
                 auto spr = ButtonSprite::create(ib::kStages[i].label, 50, true, "bigFont.fnt",
                                                 "GJ_button_04.png", 28.f, 0.5f);
@@ -195,15 +202,16 @@ namespace {
 
             m_desc = addLabel("", "chatFont.fnt", 0.8f, {kW / 2.f, kStageY - 30.f});
 
-            // --- ajustes ---
-            addToggle("Floating button (in level)", 112.f, ib::cfgShowButton(),
+            // --- OPCIONES (Alineadas naturalmente) ---
+            addToggle("Floating button (in level)", 140.f, ib::cfgShowButton(),
                       menu_selector(IBMenu::onToggleHud));
-            addToggle("Log saves to Geode log", 86.f, ib::cfgLogSaves(),
-                      menu_selector(IBMenu::onToggleLog));
+            addToggle("Floating background", 114.f, ib::cfgShowBg(),
+                      menu_selector(IBMenu::onToggleBg));
+            addToggle("Safe mode (hide mod)", 88.f, ib::cfgSafeMode(),
+                      menu_selector(IBMenu::onToggleSafe));
 
             m_opLabel = addLabel("", "bigFont.fnt", 0.38f, {26.f, 58.f}, {0.f, 0.5f});
             
-            // BOTONES DE OPACIDAD (Mas juntos pero sin tocarse)
             auto minus = CCMenuItemSpriteExtra::create(
                 ButtonSprite::create("-", 28, true, "bigFont.fnt", "GJ_button_01.png", 26.f, 0.7f),
                 nullptr, this, menu_selector(IBMenu::onOpacity));
@@ -218,7 +226,6 @@ namespace {
             plus->setPosition({kW - 35.f, 58.f}); 
             m_menu->addChild(plus);
 
-            // --- cerrar ---
             auto ok = CCMenuItemSpriteExtra::create(
                 ButtonSprite::create("OK", 80, true, "goldFont.fnt", "GJ_button_01.png", 30.f, 0.8f),
                 nullptr, this, menu_selector(IBMenu::onClose));
@@ -260,9 +267,16 @@ namespace {
             ib::onStageChanged();
         }
 
-        void onToggleLog(CCObject* sender) {
+        void onToggleBg(CCObject* sender) {
             const bool now = !static_cast<CCMenuItemToggler*>(sender)->isToggled();
-            ib::cfgSetLogSaves(now);
+            ib::cfgSetShowBg(now);
+            ib::onStageChanged();
+        }
+
+        void onToggleSafe(CCObject* sender) {
+            const bool now = !static_cast<CCMenuItemToggler*>(sender)->isToggled();
+            ib::cfgSetSafeMode(now);
+            ib::onStageChanged();
         }
 
         void onOpacity(CCObject* sender) {
@@ -285,10 +299,9 @@ namespace {
         void keyBackClicked() override { this->onClose(nullptr); }
 
     private:
-        // AUMENTADO A 440 PARA QUE LOS BOTONES QUEDEN DENTRO DEL BORDE
         static constexpr float kW = 440.f;
-        static constexpr float kH = 250.f;
-        static constexpr float kStageY = 168.f;
+        static constexpr float kH = 280.f;
+        static constexpr float kStageY = 198.f;
 
         static float stageX(int i) { return kW / 2.f + (i - 2.5f) * 72.f; }
 
