@@ -13,10 +13,11 @@ namespace ib {
         const char* desc;
     };
 
-    inline constexpr int kStageCount = 5;
+    inline constexpr int kStageCount = 6;
 
     // 1 tick = 1/240 s  ->  0.25 frames @ 60fps
     inline constexpr Stage kStages[kStageCount] = {
+        {1, 1,  "1/1",  "STAGE 0: 1 tick All | 1 tick Wave (0.25f @ 60fps)"},
         {2, 2,  "2/2",  "STAGE 1: 2 ticks All | 2 ticks Wave (0.5f @ 60fps)"},
         {4, 4,  "4/4",  "STAGE 2: 4 ticks All | 4 ticks Wave (1.0f @ 60fps)"},
         {8, 8,  "8/8",  "STAGE 3: 8 ticks All | 8 ticks Wave (2.0f @ 60fps)"},
