@@ -84,7 +84,7 @@ namespace {
         void flash() {
             if (!ib::cfgShowBg()) return;
             m_flash = 0.2f;
-            m_bg->setColor({30, 150, 60});
+            m_bg->setColor({30, 150, 60}); // El parpadeo verde se mantiene
         }
 
         void update(float dt) override {
@@ -170,7 +170,7 @@ namespace {
             // --- FONDO REDONDEADO (ESTILO GD) ---
             auto border = CCScale9Sprite::create("GJ_square01.png");
             border->setContentSize({kW + 6.f, kH + 6.f});
-            border->setColor({90, 200, 120}); // Verde
+            border->setColor({255, 255, 255}); // <--- Borde cambiado a BLANCO
             border->setPosition({kW / 2.f, kH / 2.f});
             m_panel->addChild(border);
 
@@ -181,7 +181,8 @@ namespace {
             m_panel->addChild(bg);
             // -----------------------------------
 
-            addLabel("Predictive Input Buffer", "goldFont.fnt", 0.62f, {kW / 2.f, kH - 22.f});
+            // <--- Título cambiado a BLANCO usando bigFont --->
+            addLabel("Predictive Input Buffer", "bigFont.fnt", 0.62f, {kW / 2.f, kH - 22.f});
             addLabel("Stage  (ticks: All / Wave)", "chatFont.fnt", 0.85f, {kW / 2.f, kH - 48.f});
 
             m_menu = CCMenu::create();
@@ -209,22 +210,24 @@ namespace {
 
             m_opLabel = addLabel("", "bigFont.fnt", 0.38f, {26.f, 58.f}, {0.f, 0.5f});
             
+            // <--- Botones de opacidad cambiados a GRIS (GJ_button_04) --->
             auto minus = CCMenuItemSpriteExtra::create(
-                ButtonSprite::create("-", 28, true, "bigFont.fnt", "GJ_button_01.png", 26.f, 0.7f),
+                ButtonSprite::create("-", 28, true, "bigFont.fnt", "GJ_button_04.png", 26.f, 0.7f),
                 nullptr, this, menu_selector(IBMenu::onOpacity));
             minus->setTag(-1);
             minus->setPosition({kW - 85.f, 58.f}); 
             m_menu->addChild(minus);
             
             auto plus = CCMenuItemSpriteExtra::create(
-                ButtonSprite::create("+", 28, true, "bigFont.fnt", "GJ_button_01.png", 26.f, 0.7f),
+                ButtonSprite::create("+", 28, true, "bigFont.fnt", "GJ_button_04.png", 26.f, 0.7f),
                 nullptr, this, menu_selector(IBMenu::onOpacity));
             plus->setTag(1);
             plus->setPosition({kW - 35.f, 58.f}); 
             m_menu->addChild(plus);
 
+            // <--- Botón OK cambiado a GRIS con texto BLANCO --->
             auto ok = CCMenuItemSpriteExtra::create(
-                ButtonSprite::create("OK", 80, true, "goldFont.fnt", "GJ_button_01.png", 30.f, 0.8f),
+                ButtonSprite::create("OK", 80, true, "bigFont.fnt", "GJ_button_04.png", 30.f, 0.8f),
                 nullptr, this, menu_selector(IBMenu::onClose));
             ok->setPosition({kW / 2.f, 24.f});
             m_menu->addChild(ok);
