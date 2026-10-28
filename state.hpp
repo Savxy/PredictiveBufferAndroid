@@ -1,21 +1,18 @@
 #pragma once
 
-// Predictive Input Buffer - estado compartido (logica <-> interfaz tactil)
-
 #include <Geode/Geode.hpp>
 
 namespace ib {
 
     struct Stage {
-        int all;          // ticks maximos de retraso (todos los modos)
-        int wave;         // ticks maximos de retraso (wave)
+        int all;
+        int wave;
         const char* label;
         const char* desc;
     };
 
     inline constexpr int kStageCount = 6;
 
-    // 1 tick = 1/240 s  ->  0.25 frames @ 60fps
     inline constexpr Stage kStages[kStageCount] = {
         {1, 1,  "1/1",  "STAGE 0: 1 tick All | 1 tick Wave (0.25f @ 60fps)"},
         {2, 2,  "2/2",  "STAGE 1: 2 ticks All | 2 ticks Wave (0.5f @ 60fps)"},
@@ -26,16 +23,15 @@ namespace ib {
     };
 
     struct State {
-        // jugadores "fantasma" que se usan para simular la trayectoria
         PlayerObject* ghost1 = nullptr;
         PlayerObject* ghost2 = nullptr;
-        cocos2d::CCNode* holder = nullptr;   // contenedor invisible de los fantasmas
+        cocos2d::CCNode* holder = nullptr;
 
-        bool simulating = false;   // true mientras corre una simulacion
-        bool injecting = false;    // true mientras se re-inyecta un input retrasado
-        bool simDied = false;      // el fantasma murio durante la simulacion
-        bool lastDown = false;     // ultimo estado pedido por el jugador
-        bool prevDown = false;     // ultimo estado realmente enviado al juego
+        bool simulating = false;
+        bool injecting = false;
+        bool simDied = false;
+        bool lastDown = false;
+        bool prevDown = false;
         bool lastIsP1 = true;
         bool enabled = true;
 
@@ -43,40 +39,38 @@ namespace ib {
         int limitAll = 2;
         int limitWave = 2;
 
-        int pending = -1;          // >=0: ticks que faltan | -1: nada | -2: soltar tras inyectar
-        bool pendingDown = false;  // estado del input retrasado
-        bool flagD = false;        // llego un input contrario mientras habia uno retrasado
+        int pending = -1;
+        bool pendingDown = false;
+        bool flagD = false;
 
-        float stepDt = 0.25f;      // dt de un tick (en unidades de frame @60fps)
-        int sinceInput = 999;      // ticks desde el ultimo input
-        int rapidCount = 0;        // inputs rapidos consecutivos
-        bool simBroken = false;    // la simulacion no esta disponible en esta version
+        float stepDt = 0.25f;
+        int sinceInput = 999;
+        int rapidCount = 0;
+        bool simBroken = false;
     };
 
     State& S();
 
-    // ----- etapas -----
-    void applyStage(int stage);   // aplica (sin guardar ni avisar)
-    void setStage(int stage);     // aplica + guarda + actualiza la interfaz
-    void cycleStage();            // F6 en PC / toque en el boton flotante
+    void applyStage(int stage);
+    void setStage(int stage);
+    void cycleStage();
     void loadSettings();
 
-    // ----- ajustes guardados -----
     bool cfgShowButton();
     void cfgSetShowButton(bool v);
-    int cfgOpacity();             // 10..100
+    bool cfgShowBg();
+    void cfgSetShowBg(bool v);
+    bool cfgSafeMode();
+    void cfgSetSafeMode(bool v);
+    int cfgOpacity();
     void cfgSetOpacity(int v);
-    bool cfgLogSaves();
-    void cfgSetLogSaves(bool v);
 
-    // ----- ciclo de vida (buffer.cpp) -----
     void createGhosts(PlayLayer* pl);
     void destroyGhosts();
     void resetRuntime();
 
-    // ----- interfaz tactil (ui.cpp) -----
-    void onStageChanged();                  // refresca el boton flotante
-    void onSaved(int ticks);                // parpadeo cuando el buffer actua
+    void onStageChanged();
+    void onSaved(int ticks);
     void attachHud(cocos2d::CCNode* parent);
     void openMenu();
 
