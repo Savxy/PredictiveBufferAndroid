@@ -42,7 +42,8 @@ namespace {
             m_bg = CCLayerColor::create(ccc4(0, 0, 0, 160), kW, kH);
             this->addChild(m_bg);
 
-            m_label = CCLabelBMFont::create("IB", "bigFont.fnt");
+            // <--- Cambiado de "IB" a "PB" --->
+            m_label = CCLabelBMFont::create("PB", "bigFont.fnt");
             m_label->setScale(0.45f);
             m_label->setPosition({kW / 2.f, kH / 2.f});
             this->addChild(m_label);
@@ -76,7 +77,8 @@ namespace {
                 m_bg->setVisible(ib::cfgShowBg());
                 m_bg->setOpacity(static_cast<unsigned char>(a * 3 / 4));
                 m_label->setOpacity(static_cast<unsigned char>(a));
-                std::string text = std::string("IB ") + ib::kStages[ib::S().stage].label;
+                // <--- Cambiado de "IB " a "PB " --->
+                std::string text = std::string("PB ") + ib::kStages[ib::S().stage].label;
                 m_label->setString(text.c_str());
             }
         }
@@ -170,7 +172,7 @@ namespace {
             // --- FONDO REDONDEADO (ESTILO GD) ---
             auto border = CCScale9Sprite::create("GJ_square01.png");
             border->setContentSize({kW + 6.f, kH + 6.f});
-            border->setColor({255, 255, 255}); // <--- Borde cambiado a BLANCO
+            border->setColor({255, 255, 255}); // Borde blanco
             border->setPosition({kW / 2.f, kH / 2.f});
             m_panel->addChild(border);
 
@@ -181,7 +183,6 @@ namespace {
             m_panel->addChild(bg);
             // -----------------------------------
 
-            // <--- Título cambiado a BLANCO usando bigFont --->
             addLabel("Predictive Input Buffer", "bigFont.fnt", 0.62f, {kW / 2.f, kH - 22.f});
             addLabel("Stage  (ticks: All / Wave)", "chatFont.fnt", 0.85f, {kW / 2.f, kH - 48.f});
 
@@ -210,7 +211,7 @@ namespace {
 
             m_opLabel = addLabel("", "bigFont.fnt", 0.38f, {26.f, 58.f}, {0.f, 0.5f});
             
-            // <--- Botones de opacidad cambiados a GRIS (GJ_button_04) --->
+            // Botones de opacidad grises
             auto minus = CCMenuItemSpriteExtra::create(
                 ButtonSprite::create("-", 28, true, "bigFont.fnt", "GJ_button_04.png", 26.f, 0.7f),
                 nullptr, this, menu_selector(IBMenu::onOpacity));
@@ -225,7 +226,7 @@ namespace {
             plus->setPosition({kW - 35.f, 58.f}); 
             m_menu->addChild(plus);
 
-            // <--- Botón OK cambiado a GRIS con texto BLANCO --->
+            // Botón OK gris con texto blanco
             auto ok = CCMenuItemSpriteExtra::create(
                 ButtonSprite::create("OK", 80, true, "bigFont.fnt", "GJ_button_04.png", 30.f, 0.8f),
                 nullptr, this, menu_selector(IBMenu::onClose));
@@ -325,7 +326,8 @@ namespace {
     };
 
     CCMenuItemSpriteExtra* makeIBButton(CCObject* target, SEL_MenuHandler cb) {
-        auto spr = ButtonSprite::create("IB", 36, true, "bigFont.fnt", "GJ_button_01.png", 30.f, 0.7f);
+        // <--- Botón del menú principal cambiado a "PB" y color gris (GJ_button_04) --->
+        auto spr = ButtonSprite::create("PB", 36, true, "bigFont.fnt", "GJ_button_04.png", 30.f, 0.7f);
         auto btn = CCMenuItemSpriteExtra::create(spr, nullptr, target, cb);
         btn->setID("ai.predictivebuffer/ib-button");
         return btn;
