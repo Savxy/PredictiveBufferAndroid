@@ -62,9 +62,6 @@ namespace ib {
     bool cfgShowBg() { return Mod::get()->getSavedValue<bool>("show-bg", true); }
     void cfgSetShowBg(bool v) { Mod::get()->setSavedValue<bool>("show-bg", v); }
 
-    bool cfgSafeMode() { return Mod::get()->getSavedValue<bool>("safe-mode", false); }
-    void cfgSetSafeMode(bool v) { Mod::get()->setSavedValue<bool>("safe-mode", v); }
-
     void resetRuntime() {
         auto& st = S();
         st.simulating = false;
@@ -657,18 +654,5 @@ class $modify(IBPlayLayer, PlayLayer) {
     void playEndAnimationToPos(cocos2d::CCPoint pos) {
         if (ib::S().simulating) return;
         PlayLayer::playEndAnimationToPos(pos);
-    }
-};
-
-// =======================================================================
-// NUEVO HOOK PARA EL SAFE MODE REAL (No guarda porcentaje)
-// =======================================================================
-class $modify(IBSafeModeLayer, PlayLayer) {
-    void updateBestProgress() {
-        // Si el Safe Mode está activado, ignoramos el guardado del porcentaje
-        if (ib::cfgSafeMode()) {
-            return;
-        }
-        PlayLayer::updateBestProgress();
     }
 };
