@@ -63,11 +63,12 @@ namespace ib {
         log::info("[InputBuffer] v4.7 LOADED (touch port) - {}", kStages[S().stage].desc);
     }
 
+    // AQUI ESTA LA MAGIA: Cambiado el limite inferior de 10 a 0
+    int cfgOpacity() { return std::clamp(Mod::get()->getSavedValue<int>("button-opacity", 55), 0, 100); }
+    void cfgSetOpacity(int v) { Mod::get()->setSavedValue<int>("button-opacity", std::clamp(v, 0, 100)); }
+
     bool cfgShowButton() { return Mod::get()->getSavedValue<bool>("show-button", true); }
     void cfgSetShowButton(bool v) { Mod::get()->setSavedValue<bool>("show-button", v); }
-
-    int cfgOpacity() { return std::clamp(Mod::get()->getSavedValue<int>("button-opacity", 55), 10, 100); }
-    void cfgSetOpacity(int v) { Mod::get()->setSavedValue<int>("button-opacity", std::clamp(v, 10, 100)); }
 
     bool cfgLogSaves() { return Mod::get()->getSavedValue<bool>("log-saves", false); }
     void cfgSetLogSaves(bool v) { Mod::get()->setSavedValue<bool>("log-saves", v); }
