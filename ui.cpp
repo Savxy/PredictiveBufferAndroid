@@ -203,19 +203,19 @@ namespace {
 
             m_opLabel = addLabel("", "bigFont.fnt", 0.38f, {26.f, 58.f}, {0.f, 0.5f});
             
-            // BOTONES DE OPACIDAD SEPARADOS
+            // BOTONES DE OPACIDAD (Mas juntos pero sin tocarse)
             auto minus = CCMenuItemSpriteExtra::create(
                 ButtonSprite::create("-", 28, true, "bigFont.fnt", "GJ_button_01.png", 26.f, 0.7f),
                 nullptr, this, menu_selector(IBMenu::onOpacity));
             minus->setTag(-1);
-            minus->setPosition({kW - 95.f, 58.f}); // Movido mas a la izquierda
+            minus->setPosition({kW - 85.f, 58.f}); 
             m_menu->addChild(minus);
             
             auto plus = CCMenuItemSpriteExtra::create(
                 ButtonSprite::create("+", 28, true, "bigFont.fnt", "GJ_button_01.png", 26.f, 0.7f),
                 nullptr, this, menu_selector(IBMenu::onOpacity));
             plus->setTag(1);
-            plus->setPosition({kW - 30.f, 58.f}); // Movido mas a la derecha
+            plus->setPosition({kW - 35.f, 58.f}); 
             m_menu->addChild(plus);
 
             // --- cerrar ---
@@ -285,11 +285,11 @@ namespace {
         void keyBackClicked() override { this->onClose(nullptr); }
 
     private:
-        static constexpr float kW = 400.f;
+        // AUMENTADO A 440 PARA QUE LOS BOTONES QUEDEN DENTRO DEL BORDE
+        static constexpr float kW = 440.f;
         static constexpr float kH = 250.f;
         static constexpr float kStageY = 168.f;
 
-        // AUMENTAMOS LA SEPARACION DE LOS BOTONES DE ETAPA A 72 PIXELES
         static float stageX(int i) { return kW / 2.f + (i - 2.5f) * 72.f; }
 
         CCLabelBMFont* addLabel(const char* text, const char* font, float scale, CCPoint pos,
