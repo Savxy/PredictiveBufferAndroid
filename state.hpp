@@ -60,8 +60,6 @@ namespace ib {
     void cfgSetShowButton(bool v);
     bool cfgShowBg();
     void cfgSetShowBg(bool v);
-    bool cfgSafeMode();
-    void cfgSetSafeMode(bool v);
     int cfgOpacity();
     void cfgSetOpacity(int v);
 
