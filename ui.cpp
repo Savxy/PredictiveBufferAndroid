@@ -33,7 +33,8 @@ namespace {
             m_parentMenu = parentMenu;
             m_parentMenu->retain();
 
-            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 0))) return false;
+            // Usamos opacidad 120 para evitar el bug del cuadro negro en Android
+            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 120))) return false;
             this->setTouchEnabled(true);
             this->setKeypadEnabled(true);
 
@@ -62,7 +63,6 @@ namespace {
             bg->setOpacity(200); 
             m_panel->addChild(bg, 1);
 
-            // Texto más arriba y centrado
             auto title = CCLabelBMFont::create("Select Target", "bigFont.fnt");
             title->setScale(0.7f);
             title->setColor(intToColor(ib::cfgColorText()));
@@ -82,13 +82,11 @@ namespace {
                 menu->addChild(btn);
             };
 
-            // Separación perfecta de 60 píxeles entre cada botón
             makeBtn("Background", menu_selector(ColorTargetLayer::onBg), 80.f);
             makeBtn("Border", menu_selector(ColorTargetLayer::onBorder), 20.f);
             makeBtn("Texts", menu_selector(ColorTargetLayer::onText), -40.f);
             makeBtn("Buttons", menu_selector(ColorTargetLayer::onBtn), -100.f);
 
-            // Botón X en la esquina superior derecha, sin chocar con el título
             auto sprClose = ButtonSprite::create("X", "bigFont.fnt", "GJ_button_04.png", 0.5f);
             sprClose->setCascadeColorEnabled(true);
             auto closeBtn = CCMenuItemSpriteExtra::create(sprClose, this, menu_selector(ColorTargetLayer::onClose));
@@ -96,7 +94,6 @@ namespace {
             closeBtn->setPosition({105.f, 145.f}); 
             menu->addChild(closeBtn);
 
-            // --- ANIMACIÓN DE APERTURA ---
             m_panel->setScale(0.5f);
             m_panel->setOpacity(0);
             
@@ -344,7 +341,8 @@ namespace {
         }
 
         bool setup() {
-            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 0))) return false;
+            // Usamos opacidad 120 para evitar el bug del cuadro negro
+            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 120))) return false;
             this->setTouchEnabled(true);
             this->setKeypadEnabled(true);
 
@@ -395,7 +393,6 @@ namespace {
                 btn->setPosition({stageX(i), kStageY});
                 m_menu->addChild(btn);
                 m_stageBtns[i] = btn; 
-                m_allButtons.push_back(btn);
             }
 
             m_desc = addLabel("", "chatFont.fnt", 0.8f, {kW / 2.f, kStageY - 30.f});
@@ -430,8 +427,8 @@ namespace {
             m_menu->addChild(ok);
             m_allButtons.push_back(ok);
 
-            refresh();
             applyColors();
+            refresh();
 
             this->setOpacity(0);
             m_panel->setScale(0.5f);
@@ -456,18 +453,29 @@ namespace {
                 lbl->setColor(intToColor(ib::cfgColorText()));
             }
 
+            // Pintamos los botones de utilidad (OK, -, +, COLORS)
             for (auto btn : m_allButtons) {
                 btn->setColor(intToColor(ib::cfgColorBtn()));
+                if (ib::cfgColorBtn() == 0xFFFFFF) {
+                    if (auto label = btn->getChildByType<ButtonSprite>(0)->getChildByType<CCLabelBMFont>(0)) {
+                        label->setColor(ccc3(0, 0, 0));
+                    }
+                } else {
+                    if (auto label = btn->getChildByType<ButtonSprite>(0)->getChildByType<CCLabelBMFont>(0)) {
+                        label->setColor(ccc3(255, 255, 255));
+                    }
+                }
             }
         }
 
         void refresh() {
             const int s = ib::S().stage;
 
+            // Pintamos los botones de etapa
             for (int i = 0; i < ib::kStageCount; ++i) {
                 if (m_stageBtns[i]) {
                     if (i == s) {
-                        m_stageBtns[i]->setColor(ccc3(100, 255, 100)); 
+                        m_stageBtns[i]->setColor(intToColor(ib::cfgColorBorder())); 
                         m_stageBtns[i]->setScale(1.1f);                
                     } else {
                         m_stageBtns[i]->setColor(intToColor(ib::cfgColorBtn())); 
