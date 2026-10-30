@@ -26,16 +26,29 @@ namespace {
         return (c.r << 16) | (c.g << 8) | c.b;
     }
 
-    // Popup pequeño para elegir qué parte pintar
-    class ColorTargetPopup : public Popup {
+    // Ventana modal simple para elegir qué parte pintar (reemplaza al Popup)
+    class ColorTargetLayer : public CCLayerColor {
     protected:
-        bool setup() override {
-            this->setTitle("Select Target");
-            auto winSize = m_mainLayer->getContentSize();
-            
+        bool init() {
+            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 150))) return false;
+            this->setTouchEnabled(true);
+            this->setKeypadEnabled(true);
+
+            auto winSize = CCDirector::sharedDirector()->getWinSize();
+            auto bg = CCScale9Sprite::create("GJ_square01.png");
+            bg->setContentSize({240.f, 260.f});
+            bg->setPosition({winSize.width / 2.f, winSize.height / 2.f});
+            bg->setColor({30, 30, 30});
+            this->addChild(bg);
+
+            auto title = CCLabelBMFont::create("Select Target", "goldFont.fnt");
+            title->setScale(0.7f);
+            title->setPosition({winSize.width / 2.f, winSize.height / 2.f + 100.f});
+            this->addChild(title);
+
             auto menu = CCMenu::create();
-            menu->setPosition({winSize.width / 2.f, winSize.height / 2.f - 10.f});
-            m_mainLayer->addChild(menu);
+            menu->setPosition({winSize.width / 2.f, winSize.height / 2.f});
+            this->addChild(menu);
 
             auto makeBtn = [&](const char* text, SEL_MenuHandler cb, float y) {
                 auto btn = CCMenuItemSpriteExtra::create(
@@ -45,22 +58,28 @@ namespace {
                 menu->addChild(btn);
             };
 
-            makeBtn("Background", menu_selector(ColorTargetPopup::onBg), 60.f);
-            makeBtn("Border", menu_selector(ColorTargetPopup::onBorder), 20.f);
-            makeBtn("Texts", menu_selector(ColorTargetPopup::onText), -20.f);
-            makeBtn("Buttons", menu_selector(ColorTargetPopup::onBtn), -60.f);
+            makeBtn("Background", menu_selector(ColorTargetLayer::onBg), 60.f);
+            makeBtn("Border", menu_selector(ColorTargetLayer::onBorder), 20.f);
+            makeBtn("Texts", menu_selector(ColorTargetLayer::onText), -20.f);
+            makeBtn("Buttons", menu_selector(ColorTargetLayer::onBtn), -60.f);
+
+            auto closeBtn = CCMenuItemSpriteExtra::create(
+                ButtonSprite::create("X", "bigFont.fnt", "GJ_button_04.png", 0.5f),
+                this, menu_selector(ColorTargetLayer::onClose));
+            closeBtn->setPosition({100.f, 110.f});
+            menu->addChild(closeBtn);
 
             return true;
         }
 
     public:
-        static ColorTargetPopup* create() {
-            auto ret = new ColorTargetPopup();
-            if (ret && ret->initAnchored(200.f, 220.f, "GJ_square01.png")) {
+        static ColorTargetLayer* create() {
+            auto ret = new ColorTargetLayer();
+            if (ret && ret->init()) {
                 ret->autorelease();
                 return ret;
             }
-            CC_SAFE_DELETE(ret);
+            delete ret;
             return nullptr;
         }
 
@@ -103,6 +122,20 @@ namespace {
             popup->show();
             this->onClose(nullptr);
         }
+
+        void onClose(CCObject*) {
+            this->removeFromParentAndCleanup(true);
+        }
+
+        void keyBackClicked() override {
+            this->onClose(nullptr);
+        }
+
+        void registerWithTouchDispatcher() override {
+            CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this, -700, true);
+        }
+
+        bool ccTouchBegan(CCTouch*, CCEvent*) override { return true; }
     };
 
     class IBHud : public CCLayer {
@@ -256,7 +289,6 @@ namespace {
 
             auto win = CCDirector::sharedDirector()->getWinSize();
             
-            // Usamos CCLayerColor para que funcione setOpacity
             m_panel = CCLayerColor::create(ccc4(0, 0, 0, 0));
             m_panel->setContentSize({kW, kH});
             m_panel->setPosition({(win.width - kW) / 2.f, (win.height - kH) / 2.f});
@@ -345,7 +377,7 @@ namespace {
             // --- ANIMACIÓN DE APERTURA ---
             this->setOpacity(0);
             m_panel->setScale(0.5f);
-            m_panel->setOpacity(0); // Ahora funciona porque m_panel es CCLayerColor
+            m_panel->setOpacity(0);
             
             auto fadeIn = CCFadeTo::create(0.15f, 255);
             auto panelFadeIn = CCFadeTo::create(0.15f, 255);
@@ -393,8 +425,11 @@ namespace {
         }
 
         void onPalette(CCObject*) {
-            auto popup = ColorTargetPopup::create();
-            popup->show();
+            auto popup = ColorTargetLayer::create();
+            if (popup) {
+                popup->setID("color-target-layer");
+                CCDirector::sharedDirector()->getRunningScene()->addChild(popup, 100000);
+            }
         }
 
         void onStage(CCObject* sender) {
@@ -472,7 +507,7 @@ namespace {
             m_menu->addChild(toggler);
         }
 
-        CCLayerColor* m_panel = nullptr; // CAMBIADO A CCLAYERCOLOR
+        CCLayerColor* m_panel = nullptr;
         CCMenu* m_menu = nullptr;
         CCScale9Sprite* m_bgSpr = nullptr;
         CCScale9Sprite* m_borderSpr = nullptr;
