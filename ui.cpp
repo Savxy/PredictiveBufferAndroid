@@ -64,6 +64,7 @@ namespace {
             return nullptr;
         }
 
+        // ARREGLADO: Sintaxis correcta de ColorPickPopup para Geode 5.11.2
         void onBg(CCObject*) {
             auto popup = ColorPickPopup::create(intToColor(ib::cfgColorBg()), [](ccColor3B const& c) {
                 ib::cfgSetColorBg(colorToInt(c));
@@ -248,8 +249,12 @@ namespace {
             this->setKeypadEnabled(true);
 
             auto win = CCDirector::sharedDirector()->getWinSize();
-            m_panel = CCNode::create();
+            
+            // ARREGLADO: Usamos CCLayer en lugar de CCNode para que setOpacity funcione
+            m_panel = CCLayer::create();
+            m_panel->setContentSize({kW, kH});
             m_panel->setPosition({(win.width - kW) / 2.f, (win.height - kH) / 2.f});
+            m_panel->setCascadeOpacityEnabled(true);
             this->addChild(m_panel);
 
             m_borderSpr = CCScale9Sprite::create("GJ_square01.png");
@@ -270,16 +275,13 @@ namespace {
             m_menu->setTouchPriority(-701);
             m_panel->addChild(m_menu);
 
-            // --- BOTÓN PALETA (Dibujado en código) ---
+            // --- BOTÓN PALETA ---
             auto paletteDraw = CCDrawNode::create();
-            // Base blanca de la paleta
             paletteDraw->drawDot({0, 0}, 14.f, {255, 255, 255, 255});
-            // Pintitas de colores
-            paletteDraw->drawDot({-6, 6}, 3.f, {255, 0, 0, 255});   // Rojo
-            paletteDraw->drawDot({6, 6}, 3.f, {0, 255, 0, 255});    // Verde
-            paletteDraw->drawDot({6, -6}, 3.f, {0, 0, 255, 255});   // Azul
-            paletteDraw->drawDot({-6, -6}, 3.f, {255, 255, 0, 255}); // Amarillo
-            // Agujero central
+            paletteDraw->drawDot({-6, 6}, 3.f, {255, 0, 0, 255});
+            paletteDraw->drawDot({6, 6}, 3.f, {0, 255, 0, 255});
+            paletteDraw->drawDot({6, -6}, 3.f, {0, 0, 255, 255});
+            paletteDraw->drawDot({-6, -6}, 3.f, {255, 255, 0, 255});
             paletteDraw->drawDot({0, 0}, 4.f, {0, 0, 0, 0}); 
             
             auto paletteBtn = CCMenuItemSpriteExtra::create(
@@ -337,7 +339,7 @@ namespace {
             // --- ANIMACIÓN DE APERTURA ---
             this->setOpacity(0);
             m_panel->setScale(0.5f);
-            m_panel->setOpacity(0);
+            m_panel->setOpacity(0); // AHORA SÍ FUNCIONA, PORQUE M_PANEL ES UN CCLAYER
             
             auto fadeIn = CCFadeTo::create(0.15f, 255);
             auto panelFadeIn = CCFadeTo::create(0.15f, 255);
@@ -359,7 +361,6 @@ namespace {
             }
 
             for (size_t i = 0; i < m_allButtons.size(); ++i) {
-                // Si no es el botón de la etapa activa, lo pintamos
                 if (i < ib::kStageCount && i == ib::S().stage) continue;
                 m_allButtons[i]->setColor(intToColor(ib::cfgColorBtn()));
             }
@@ -416,11 +417,14 @@ namespace {
 
         void onClose(CCObject*) {
             this->setTouchEnabled(false);
+            
             auto fadeOut = CCFadeTo::create(0.15f, 0);
             auto panelFadeOut = CCFadeTo::create(0.15f, 0);
             auto scaleOut = CCScaleTo::create(0.15f, 0.7f);
             auto easeScaleOut = CCEaseBackIn::create(scaleOut);
+            
             auto cleanup = CCCallFunc::create(this, callfunc_selector(IBMenu::doCleanup));
+            
             this->runAction(CCSequence::create(fadeOut, cleanup, nullptr));
             m_panel->runAction(CCSpawn::create(panelFadeOut, easeScaleOut, nullptr));
         }
@@ -462,7 +466,7 @@ namespace {
             m_menu->addChild(toggler);
         }
 
-        CCNode* m_panel = nullptr;
+        CCLayer* m_panel = nullptr; // CAMBIADO DE CCNode A CCLayer
         CCMenu* m_menu = nullptr;
         CCScale9Sprite* m_bgSpr = nullptr;
         CCScale9Sprite* m_borderSpr = nullptr;
