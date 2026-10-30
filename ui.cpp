@@ -41,6 +41,9 @@ namespace {
     class ColorTargetLayer : public CCLayer {
     protected:
         CCNode* m_parentMenu = nullptr;
+        CCLayerColor* m_dimBg = nullptr; // Para animar la opacidad
+        CCLayer* m_panel = nullptr;      // Para animar la escala
+
         bool init(CCNode* parentMenu) {
             m_parentMenu = parentMenu;
 
@@ -50,20 +53,20 @@ namespace {
 
             auto winSize = CCDirector::sharedDirector()->getWinSize();
             
-            // Fondo oscuro semi-transparente para atenuar el juego
-            auto dimBg = CCLayerColor::create(ccc4(0, 0, 0, 150), winSize.width, winSize.height);
-            this->addChild(dimBg, -1);
+            // Fondo oscuro semi-transparente
+            m_dimBg = CCLayerColor::create(ccc4(0, 0, 0, 150), winSize.width, winSize.height);
+            this->addChild(m_dimBg, -1);
 
             m_panel = CCLayer::create();
             m_panel->setContentSize({240.f, 320.f});
             m_panel->setPosition({(winSize.width - 240.f) / 2.f, (winSize.height - 320.f) / 2.f});
             this->addChild(m_panel);
 
-            // Fondo del panel con color exacto (sin sombras)
+            // Fondo del panel con color exacto
             auto bgColor = CCLayerColor::create(ccc4ToB(intToColor(ib::cfgColorBg())), 240.f, 320.f);
             m_panel->addChild(bgColor, 0);
 
-            // Borde usando la imagen para mantener las esquinas redondeadas
+            // Borde redondeado
             auto border = CCScale9Sprite::create("GJ_square01.png");
             border->setContentSize({246.f, 326.f});
             border->setPosition({120.f, 160.f}); 
@@ -103,14 +106,16 @@ namespace {
             closeBtn->setPosition({105.f, 145.f}); 
             menu->addChild(closeBtn);
 
+            // --- ANIMACIÓN DE APERTURA (CORREGIDA) ---
             m_panel->setScale(0.5f);
-            m_panel->setOpacity(0);
+            m_dimBg->setOpacity(0);
             
-            auto panelFadeIn = CCFadeTo::create(0.15f, 255);
+            auto fadeIn = CCFadeTo::create(0.15f, 150);
             auto scaleIn = CCScaleTo::create(0.2f, 1.0f);
             auto easeScaleIn = CCEaseBackOut::create(scaleIn);
             
-            m_panel->runAction(CCSpawn::create(panelFadeIn, easeScaleIn, nullptr));
+            m_dimBg->runAction(fadeIn);
+            m_panel->runAction(easeScaleIn);
 
             return true;
         }
@@ -173,17 +178,14 @@ namespace {
         void onClose(CCObject*) {
             this->setTouchEnabled(false);
             
-            auto panelFadeOut = CCFadeTo::create(0.15f, 0);
+            // --- ANIMACIÓN DE CIERRE (CORREGIDA) ---
+            auto fadeOut = CCFadeTo::create(0.15f, 0);
             auto scaleOut = CCScaleTo::create(0.15f, 0.7f);
             auto easeScaleOut = CCEaseBackIn::create(scaleOut);
-            
             auto cleanup = CCCallFunc::create(this, callfunc_selector(ColorTargetLayer::doCleanup));
             
-            m_panel->runAction(CCSequence::create(
-                CCSpawn::create(panelFadeOut, easeScaleOut, nullptr),
-                cleanup,
-                nullptr
-            ));
+            m_dimBg->runAction(fadeOut);
+            m_panel->runAction(CCSequence::create(easeScaleOut, cleanup, nullptr));
         }
 
         void doCleanup() {
@@ -196,9 +198,6 @@ namespace {
             CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this, -700, true);
         }
         bool ccTouchBegan(CCTouch*, CCEvent*) override { return true; }
-
-    private:
-        CCLayer* m_panel = nullptr;
     };
 
     class IBHud : public CCLayer {
@@ -352,20 +351,20 @@ namespace {
 
             auto win = CCDirector::sharedDirector()->getWinSize();
             
-            // Fondo oscuro semi-transparente
-            auto dimBg = CCLayerColor::create(ccc4(0, 0, 0, 150), win.width, win.height);
-            this->addChild(dimBg, -1);
+            // Fondo oscuro
+            m_dimBg = CCLayerColor::create(ccc4(0, 0, 0, 150), win.width, win.height);
+            this->addChild(m_dimBg, -1);
 
             m_panel = CCLayer::create();
             m_panel->setContentSize({kW, kH});
             m_panel->setPosition({(win.width - kW) / 2.f, (win.height - kH) / 2.f});
             this->addChild(m_panel);
 
-            // Fondo del panel con color exacto (sin sombras)
+            // Fondo plano del panel
             m_bgColor = CCLayerColor::create(ccc4ToB(intToColor(ib::cfgColorBg())), kW, kH);
             m_panel->addChild(m_bgColor, 0);
 
-            // Borde para las esquinas redondeadas
+            // Borde redondeado
             m_borderSpr = CCScale9Sprite::create("GJ_square01.png");
             m_borderSpr->setContentSize({kW + 6.f, kH + 6.f});
             m_borderSpr->setColor(intToColor(ib::cfgColorBorder()));
@@ -434,17 +433,16 @@ namespace {
             applyColors();
             refresh();
 
-            this->setOpacity(0);
+            // --- ANIMACIÓN DE APERTURA (CORREGIDA) ---
             m_panel->setScale(0.5f);
-            m_panel->setOpacity(0);
+            m_dimBg->setOpacity(0);
             
-            auto fadeIn = CCFadeTo::create(0.15f, 255);
-            auto panelFadeIn = CCFadeTo::create(0.15f, 255);
+            auto fadeIn = CCFadeTo::create(0.15f, 150);
             auto scaleIn = CCScaleTo::create(0.2f, 1.0f);
             auto easeScaleIn = CCEaseBackOut::create(scaleIn);
             
-            this->runAction(fadeIn);
-            m_panel->runAction(CCSpawn::create(panelFadeIn, easeScaleIn, nullptr));
+            m_dimBg->runAction(fadeIn);
+            m_panel->runAction(easeScaleIn);
 
             return true;
         }
@@ -522,15 +520,15 @@ namespace {
         void onClose(CCObject*) {
             this->setTouchEnabled(false);
             
+            // --- ANIMACIÓN DE CIERRE (CORREGIDA) ---
             auto fadeOut = CCFadeTo::create(0.15f, 0);
-            auto panelFadeOut = CCFadeTo::create(0.15f, 0);
             auto scaleOut = CCScaleTo::create(0.15f, 0.7f);
             auto easeScaleOut = CCEaseBackIn::create(scaleOut);
             
             auto cleanup = CCCallFunc::create(this, callfunc_selector(IBMenu::doCleanup));
             
-            this->runAction(CCSequence::create(fadeOut, cleanup, nullptr));
-            m_panel->runAction(CCSpawn::create(panelFadeOut, easeScaleOut, nullptr));
+            m_dimBg->runAction(fadeOut);
+            m_panel->runAction(CCSequence::create(easeScaleOut, cleanup, nullptr));
         }
 
         void doCleanup() {
@@ -574,10 +572,11 @@ namespace {
             m_menu->addChild(toggler);
         }
 
+        CCLayerColor* m_dimBg = nullptr;
         CCLayer* m_panel = nullptr;
         CCMenu* m_menu = nullptr;
-        CCLayerColor* m_bgColor = nullptr; // Fondo plano
-        CCScale9Sprite* m_borderSpr = nullptr; // Borde redondeado
+        CCLayerColor* m_bgColor = nullptr; 
+        CCScale9Sprite* m_borderSpr = nullptr; 
         CCMenuItemSpriteExtra* m_stageBtns[6] = {nullptr}; 
         CCLabelBMFont* m_titleLabel = nullptr;
         CCLabelBMFont* m_desc = nullptr;
