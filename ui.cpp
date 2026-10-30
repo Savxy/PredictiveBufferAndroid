@@ -26,53 +26,49 @@ namespace {
         return (c.r << 16) | (c.g << 8) | c.b;
     }
 
-    // Función auxiliar para poner el texto negro o blanco según el fondo del botón
     void updateBtnText(CCMenuItemSpriteExtra* btn, ccColor3B col) {
         if (auto spr = btn->getChildByType<ButtonSprite>(0)) {
             if (auto lbl = spr->getChildByType<CCLabelBMFont>(0)) {
                 if (col.r > 200 && col.g > 200 && col.b > 200) {
-                    lbl->setColor(ccc3(0, 0, 0)); // Texto negro si el botón es claro
+                    lbl->setColor(ccc3(0, 0, 0));
                 } else {
-                    lbl->setColor(ccc3(255, 255, 255)); // Texto blanco si es oscuro
+                    lbl->setColor(ccc3(255, 255, 255));
                 }
             }
         }
     }
 
-    class ColorTargetLayer : public CCLayerColor {
+    class ColorTargetLayer : public CCLayer {
     protected:
         CCNode* m_parentMenu = nullptr;
         bool init(CCNode* parentMenu) {
             m_parentMenu = parentMenu;
 
-            // Fondo casi transparente (Opacidad 1 para evitar bug de Android)
-            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 1))) return false;
+            if (!CCLayer::init()) return false;
             this->setTouchEnabled(true);
             this->setKeypadEnabled(true);
 
             auto winSize = CCDirector::sharedDirector()->getWinSize();
             
-            m_panel = CCLayerColor::create(ccc4(0, 0, 0, 0), 240.f, 320.f);
+            // Fondo oscuro semi-transparente para atenuar el juego
+            auto dimBg = CCLayerColor::create(ccc4(0, 0, 0, 150), winSize.width, winSize.height);
+            this->addChild(dimBg, -1);
+
+            m_panel = CCLayer::create();
+            m_panel->setContentSize({240.f, 320.f});
             m_panel->setPosition({(winSize.width - 240.f) / 2.f, (winSize.height - 320.f) / 2.f});
-            m_panel->setCascadeOpacityEnabled(true);
             this->addChild(m_panel);
 
+            // Fondo del panel con color exacto (sin sombras)
             auto bgColor = CCLayerColor::create(ccc4ToB(intToColor(ib::cfgColorBg())), 240.f, 320.f);
-            bgColor->setPosition({0.f, 0.f});
-            m_panel->addChild(bgColor, -1);
+            m_panel->addChild(bgColor, 0);
 
+            // Borde usando la imagen para mantener las esquinas redondeadas
             auto border = CCScale9Sprite::create("GJ_square01.png");
             border->setContentSize({246.f, 326.f});
             border->setPosition({120.f, 160.f}); 
             border->setColor(intToColor(ib::cfgColorBorder()));
-            m_panel->addChild(border, 0);
-
-            auto bg = CCScale9Sprite::create("GJ_square01.png");
-            bg->setContentSize({240.f, 320.f});
-            bg->setPosition({120.f, 160.f}); 
-            bg->setColor(intToColor(ib::cfgColorBg()));
-            bg->setOpacity(200); 
-            m_panel->addChild(bg, 1);
+            m_panel->addChild(border, 1);
 
             auto title = CCLabelBMFont::create("Select Target", "bigFont.fnt");
             title->setScale(0.7f);
@@ -191,7 +187,6 @@ namespace {
         }
 
         void doCleanup() {
-            // Solo hacemos visible el menú principal de nuevo, sin tocarlo de la escena
             if (m_parentMenu) m_parentMenu->setVisible(true);
             this->removeFromParentAndCleanup(true);
         }
@@ -203,7 +198,7 @@ namespace {
         bool ccTouchBegan(CCTouch*, CCEvent*) override { return true; }
 
     private:
-        CCLayerColor* m_panel = nullptr;
+        CCLayer* m_panel = nullptr;
     };
 
     class IBHud : public CCLayer {
@@ -338,7 +333,7 @@ namespace {
 
     IBHud* IBHud::s_inst = nullptr;
 
-    class IBMenu : public CCLayerColor {
+    class IBMenu : public CCLayer {
     public:
         static IBMenu* create() {
             auto ret = new IBMenu();
@@ -351,32 +346,31 @@ namespace {
         }
 
         bool setup() {
-            // Fondo casi transparente para arreglar el bug de Android
-            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 1))) return false;
+            if (!CCLayer::init()) return false;
             this->setTouchEnabled(true);
             this->setKeypadEnabled(true);
 
             auto win = CCDirector::sharedDirector()->getWinSize();
             
-            m_panel = CCLayerColor::create(ccc4(0, 0, 0, 0), kW, kH);
+            // Fondo oscuro semi-transparente
+            auto dimBg = CCLayerColor::create(ccc4(0, 0, 0, 150), win.width, win.height);
+            this->addChild(dimBg, -1);
+
+            m_panel = CCLayer::create();
+            m_panel->setContentSize({kW, kH});
             m_panel->setPosition({(win.width - kW) / 2.f, (win.height - kH) / 2.f});
-            m_panel->setCascadeOpacityEnabled(true);
             this->addChild(m_panel);
 
-            auto bgColor = CCLayerColor::create(ccc4ToB(intToColor(ib::cfgColorBg())), kW, kH);
-            bgColor->setPosition({0.f, 0.f});
-            m_panel->addChild(bgColor, -1);
+            // Fondo del panel con color exacto (sin sombras)
+            m_bgColor = CCLayerColor::create(ccc4ToB(intToColor(ib::cfgColorBg())), kW, kH);
+            m_panel->addChild(m_bgColor, 0);
 
+            // Borde para las esquinas redondeadas
             m_borderSpr = CCScale9Sprite::create("GJ_square01.png");
             m_borderSpr->setContentSize({kW + 6.f, kH + 6.f});
+            m_borderSpr->setColor(intToColor(ib::cfgColorBorder()));
             m_borderSpr->setPosition({kW / 2.f, kH / 2.f});
-            m_panel->addChild(m_borderSpr, 0);
-
-            m_bgSpr = CCScale9Sprite::create("GJ_square01.png");
-            m_bgSpr->setContentSize({kW, kH});
-            m_bgSpr->setPosition({kW / 2.f, kH / 2.f});
-            m_bgSpr->setOpacity(200); 
-            m_panel->addChild(m_bgSpr, 1);
+            m_panel->addChild(m_borderSpr, 1);
 
             m_titleLabel = addLabel("Predictive Input Buffer", "bigFont.fnt", 0.62f, {kW / 2.f - 30.f, kH - 22.f});
             addLabel("Stage  (ticks: All / Wave)", "chatFont.fnt", 0.85f, {kW / 2.f, kH - 48.f});
@@ -456,7 +450,7 @@ namespace {
         }
 
         void applyColors() {
-            m_bgSpr->setColor(intToColor(ib::cfgColorBg()));
+            m_bgColor->setColor(intToColor(ib::cfgColorBg()));
             m_borderSpr->setColor(intToColor(ib::cfgColorBorder()));
             
             for (auto lbl : m_allLabels) {
@@ -476,7 +470,6 @@ namespace {
             for (int i = 0; i < ib::kStageCount; ++i) {
                 if (m_stageBtns[i]) {
                     if (i == s) {
-                        // El botón seleccionado usa el MISMO color, pero es un poco más grande
                         m_stageBtns[i]->setColor(btnCol); 
                         m_stageBtns[i]->setScale(1.1f);                
                     } else {
@@ -493,7 +486,7 @@ namespace {
         }
 
         void onPalette(CCObject*) {
-            this->setVisible(false); // Ocultar sin eliminar de la escena
+            this->setVisible(false); 
             
             auto popup = ColorTargetLayer::create(this);
             if (popup) {
@@ -581,10 +574,10 @@ namespace {
             m_menu->addChild(toggler);
         }
 
-        CCLayerColor* m_panel = nullptr;
+        CCLayer* m_panel = nullptr;
         CCMenu* m_menu = nullptr;
-        CCScale9Sprite* m_bgSpr = nullptr;
-        CCScale9Sprite* m_borderSpr = nullptr;
+        CCLayerColor* m_bgColor = nullptr; // Fondo plano
+        CCScale9Sprite* m_borderSpr = nullptr; // Borde redondeado
         CCMenuItemSpriteExtra* m_stageBtns[6] = {nullptr}; 
         CCLabelBMFont* m_titleLabel = nullptr;
         CCLabelBMFont* m_desc = nullptr;
