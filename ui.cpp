@@ -3,15 +3,100 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/MenuLayer.hpp>
 #include <Geode/modify/PauseLayer.hpp>
+#include <Geode/ui/ColorPickPopup.hpp>
 
 #include <algorithm>
 #include <string>
+#include <vector>
 
 #include "state.hpp"
 
 using namespace geode::prelude;
 
 namespace {
+
+    ccColor3B intToColor(int hex) {
+        return { 
+            (GLubyte)((hex >> 16) & 0xFF), 
+            (GLubyte)((hex >> 8) & 0xFF), 
+            (GLubyte)(hex & 0xFF) 
+        };
+    }
+    int colorToInt(ccColor3B c) {
+        return (c.r << 16) | (c.g << 8) | c.b;
+    }
+
+    // Popup pequeño para elegir qué parte pintar
+    class ColorTargetPopup : public Popup {
+    protected:
+        bool setup() override {
+            this->setTitle("Select Target");
+            auto winSize = m_mainLayer->getContentSize();
+            
+            auto menu = CCMenu::create();
+            menu->setPosition({winSize.width / 2.f, winSize.height / 2.f - 10.f});
+            m_mainLayer->addChild(menu);
+
+            auto makeBtn = [&](const char* text, SEL_MenuHandler cb, float y) {
+                auto btn = CCMenuItemSpriteExtra::create(
+                    ButtonSprite::create(text, "bigFont.fnt", "GJ_button_04.png", 0.5f),
+                    this, cb);
+                btn->setPosition({0, y});
+                menu->addChild(btn);
+            };
+
+            makeBtn("Background", menu_selector(ColorTargetPopup::onBg), 60.f);
+            makeBtn("Border", menu_selector(ColorTargetPopup::onBorder), 20.f);
+            makeBtn("Texts", menu_selector(ColorTargetPopup::onText), -20.f);
+            makeBtn("Buttons", menu_selector(ColorTargetPopup::onBtn), -60.f);
+
+            return true;
+        }
+
+    public:
+        static ColorTargetPopup* create() {
+            auto ret = new ColorTargetPopup();
+            if (ret && ret->initAnchored(200.f, 220.f, "GJ_square01.png")) {
+                ret->autorelease();
+                return ret;
+            }
+            CC_SAFE_DELETE(ret);
+            return nullptr;
+        }
+
+        void onBg(CCObject*) {
+            auto popup = ColorPickPopup::create(intToColor(ib::cfgColorBg()), [](ccColor3B const& c) {
+                ib::cfgSetColorBg(colorToInt(c));
+                ib::onStageChanged();
+            });
+            popup->show();
+            this->onClose(nullptr);
+        }
+        void onBorder(CCObject*) {
+            auto popup = ColorPickPopup::create(intToColor(ib::cfgColorBorder()), [](ccColor3B const& c) {
+                ib::cfgSetColorBorder(colorToInt(c));
+                ib::onStageChanged();
+            });
+            popup->show();
+            this->onClose(nullptr);
+        }
+        void onText(CCObject*) {
+            auto popup = ColorPickPopup::create(intToColor(ib::cfgColorText()), [](ccColor3B const& c) {
+                ib::cfgSetColorText(colorToInt(c));
+                ib::onStageChanged();
+            });
+            popup->show();
+            this->onClose(nullptr);
+        }
+        void onBtn(CCObject*) {
+            auto popup = ColorPickPopup::create(intToColor(ib::cfgColorBtn()), [](ccColor3B const& c) {
+                ib::cfgSetColorBtn(colorToInt(c));
+                ib::onStageChanged();
+            });
+            popup->show();
+            this->onClose(nullptr);
+        }
+    };
 
     class IBHud : public CCLayer {
     public:
@@ -42,7 +127,6 @@ namespace {
             m_bg = CCLayerColor::create(ccc4(0, 0, 0, 160), kW, kH);
             this->addChild(m_bg);
 
-            // <--- Cambiado de "IB" a "PB" --->
             m_label = CCLabelBMFont::create("PB", "bigFont.fnt");
             m_label->setScale(0.45f);
             m_label->setPosition({kW / 2.f, kH / 2.f});
@@ -77,7 +161,6 @@ namespace {
                 m_bg->setVisible(ib::cfgShowBg());
                 m_bg->setOpacity(static_cast<unsigned char>(a * 3 / 4));
                 m_label->setOpacity(static_cast<unsigned char>(a));
-                // <--- Cambiado de "IB " a "PB " --->
                 std::string text = std::string("PB ") + ib::kStages[ib::S().stage].label;
                 m_label->setString(text.c_str());
             }
@@ -86,7 +169,7 @@ namespace {
         void flash() {
             if (!ib::cfgShowBg()) return;
             m_flash = 0.2f;
-            m_bg->setColor({30, 150, 60}); // El parpadeo verde se mantiene
+            m_bg->setColor({30, 150, 60});
         }
 
         void update(float dt) override {
@@ -169,27 +252,41 @@ namespace {
             m_panel->setPosition({(win.width - kW) / 2.f, (win.height - kH) / 2.f});
             this->addChild(m_panel);
 
-            // --- FONDO REDONDEADO (ESTILO GD) ---
-            auto border = CCScale9Sprite::create("GJ_square01.png");
-            border->setContentSize({kW + 6.f, kH + 6.f});
-            border->setColor({255, 255, 255}); // Borde blanco
-            border->setPosition({kW / 2.f, kH / 2.f});
-            m_panel->addChild(border);
+            m_borderSpr = CCScale9Sprite::create("GJ_square01.png");
+            m_borderSpr->setContentSize({kW + 6.f, kH + 6.f});
+            m_borderSpr->setPosition({kW / 2.f, kH / 2.f});
+            m_panel->addChild(m_borderSpr);
 
-            auto bg = CCScale9Sprite::create("GJ_square01.png");
-            bg->setContentSize({kW, kH});
-            bg->setColor({18, 22, 30}); // Oscuro
-            bg->setPosition({kW / 2.f, kH / 2.f});
-            m_panel->addChild(bg);
-            // -----------------------------------
+            m_bgSpr = CCScale9Sprite::create("GJ_square01.png");
+            m_bgSpr->setContentSize({kW, kH});
+            m_bgSpr->setPosition({kW / 2.f, kH / 2.f});
+            m_panel->addChild(m_bgSpr);
 
-            addLabel("Predictive Input Buffer", "bigFont.fnt", 0.62f, {kW / 2.f, kH - 22.f});
+            m_titleLabel = addLabel("Predictive Input Buffer", "bigFont.fnt", 0.62f, {kW / 2.f - 30.f, kH - 22.f});
             addLabel("Stage  (ticks: All / Wave)", "chatFont.fnt", 0.85f, {kW / 2.f, kH - 48.f});
 
             m_menu = CCMenu::create();
             m_menu->setPosition({0.f, 0.f});
             m_menu->setTouchPriority(-701);
             m_panel->addChild(m_menu);
+
+            // --- BOTÓN PALETA (Dibujado en código) ---
+            auto paletteDraw = CCDrawNode::create();
+            // Base blanca de la paleta
+            paletteDraw->drawDot({0, 0}, 14.f, {255, 255, 255, 255});
+            // Pintitas de colores
+            paletteDraw->drawDot({-6, 6}, 3.f, {255, 0, 0, 255});   // Rojo
+            paletteDraw->drawDot({6, 6}, 3.f, {0, 255, 0, 255});    // Verde
+            paletteDraw->drawDot({6, -6}, 3.f, {0, 0, 255, 255});   // Azul
+            paletteDraw->drawDot({-6, -6}, 3.f, {255, 255, 0, 255}); // Amarillo
+            // Agujero central
+            paletteDraw->drawDot({0, 0}, 4.f, {0, 0, 0, 0}); 
+            
+            auto paletteBtn = CCMenuItemSpriteExtra::create(
+                paletteDraw, this, menu_selector(IBMenu::onPalette));
+            paletteBtn->setPosition({kW - 35.f, kH - 25.f});
+            m_menu->addChild(paletteBtn);
+            // ----------------------------------------
 
             for (int i = 0; i < ib::kStageCount; ++i) {
                 auto spr = ButtonSprite::create(ib::kStages[i].label, 50, true, "bigFont.fnt",
@@ -199,42 +296,73 @@ namespace {
                 btn->setPosition({stageX(i), kStageY});
                 m_menu->addChild(btn);
                 m_stageBtns[i] = btn; 
+                m_allButtons.push_back(btn);
             }
 
             m_desc = addLabel("", "chatFont.fnt", 0.8f, {kW / 2.f, kStageY - 30.f});
 
-            // --- OPCIONES ---
-            addToggle("Floating button (in level)", 130.f, ib::cfgShowButton(),
+            addToggle("Floating button (in level)", 160.f, ib::cfgShowButton(),
                       menu_selector(IBMenu::onToggleHud));
-            addToggle("Floating background", 104.f, ib::cfgShowBg(),
+            addToggle("Floating background", 134.f, ib::cfgShowBg(),
                       menu_selector(IBMenu::onToggleBg));
 
-            m_opLabel = addLabel("", "bigFont.fnt", 0.38f, {26.f, 58.f}, {0.f, 0.5f});
+            m_opLabel = addLabel("", "bigFont.fnt", 0.38f, {26.f, 88.f}, {0.f, 0.5f});
             
-            // Botones de opacidad grises
             auto minus = CCMenuItemSpriteExtra::create(
                 ButtonSprite::create("-", 28, true, "bigFont.fnt", "GJ_button_04.png", 26.f, 0.7f),
                 nullptr, this, menu_selector(IBMenu::onOpacity));
             minus->setTag(-1);
-            minus->setPosition({kW - 85.f, 58.f}); 
+            minus->setPosition({kW - 85.f, 88.f}); 
             m_menu->addChild(minus);
+            m_allButtons.push_back(minus);
             
             auto plus = CCMenuItemSpriteExtra::create(
                 ButtonSprite::create("+", 28, true, "bigFont.fnt", "GJ_button_04.png", 26.f, 0.7f),
                 nullptr, this, menu_selector(IBMenu::onOpacity));
             plus->setTag(1);
-            plus->setPosition({kW - 35.f, 58.f}); 
+            plus->setPosition({kW - 35.f, 88.f}); 
             m_menu->addChild(plus);
+            m_allButtons.push_back(plus);
 
-            // Botón OK gris con texto blanco
             auto ok = CCMenuItemSpriteExtra::create(
                 ButtonSprite::create("OK", 80, true, "bigFont.fnt", "GJ_button_04.png", 30.f, 0.8f),
                 nullptr, this, menu_selector(IBMenu::onClose));
-            ok->setPosition({kW / 2.f, 24.f});
+            ok->setPosition({kW / 2.f, 30.f});
             m_menu->addChild(ok);
+            m_allButtons.push_back(ok);
 
             refresh();
+            applyColors();
+
+            // --- ANIMACIÓN DE APERTURA ---
+            this->setOpacity(0);
+            m_panel->setScale(0.5f);
+            m_panel->setOpacity(0);
+            
+            auto fadeIn = CCFadeTo::create(0.15f, 255);
+            auto panelFadeIn = CCFadeTo::create(0.15f, 255);
+            auto scaleIn = CCScaleTo::create(0.2f, 1.0f);
+            auto easeScaleIn = CCEaseBackOut::create(scaleIn);
+            
+            this->runAction(fadeIn);
+            m_panel->runAction(CCSpawn::create(panelFadeIn, easeScaleIn, nullptr));
+
             return true;
+        }
+
+        void applyColors() {
+            m_bgSpr->setColor(intToColor(ib::cfgColorBg()));
+            m_borderSpr->setColor(intToColor(ib::cfgColorBorder()));
+            
+            for (auto lbl : m_allLabels) {
+                lbl->setColor(intToColor(ib::cfgColorText()));
+            }
+
+            for (size_t i = 0; i < m_allButtons.size(); ++i) {
+                // Si no es el botón de la etapa activa, lo pintamos
+                if (i < ib::kStageCount && i == ib::S().stage) continue;
+                m_allButtons[i]->setColor(intToColor(ib::cfgColorBtn()));
+            }
         }
 
         void refresh() {
@@ -246,7 +374,7 @@ namespace {
                         m_stageBtns[i]->setColor(ccc3(100, 255, 100)); 
                         m_stageBtns[i]->setScale(1.1f);                
                     } else {
-                        m_stageBtns[i]->setColor(ccc3(255, 255, 255)); 
+                        m_stageBtns[i]->setColor(intToColor(ib::cfgColorBtn())); 
                         m_stageBtns[i]->setScale(1.0f);                
                     }
                 }
@@ -255,6 +383,11 @@ namespace {
             m_desc->setString(ib::kStages[s].desc);
             std::string op = "Button opacity: " + std::to_string(ib::cfgOpacity()) + "%";
             m_opLabel->setString(op.c_str());
+        }
+
+        void onPalette(CCObject*) {
+            auto popup = ColorTargetPopup::create();
+            popup->show();
         }
 
         void onStage(CCObject* sender) {
@@ -282,6 +415,17 @@ namespace {
         }
 
         void onClose(CCObject*) {
+            this->setTouchEnabled(false);
+            auto fadeOut = CCFadeTo::create(0.15f, 0);
+            auto panelFadeOut = CCFadeTo::create(0.15f, 0);
+            auto scaleOut = CCScaleTo::create(0.15f, 0.7f);
+            auto easeScaleOut = CCEaseBackIn::create(scaleOut);
+            auto cleanup = CCCallFunc::create(this, callfunc_selector(IBMenu::doCleanup));
+            this->runAction(CCSequence::create(fadeOut, cleanup, nullptr));
+            m_panel->runAction(CCSpawn::create(panelFadeOut, easeScaleOut, nullptr));
+        }
+
+        void doCleanup() {
             this->removeFromParentAndCleanup(true);
         }
 
@@ -290,13 +434,12 @@ namespace {
         }
 
         bool ccTouchBegan(CCTouch*, CCEvent*) override { return true; }
-
         void keyBackClicked() override { this->onClose(nullptr); }
 
     private:
         static constexpr float kW = 440.f;
-        static constexpr float kH = 280.f;
-        static constexpr float kStageY = 198.f;
+        static constexpr float kH = 300.f;
+        static constexpr float kStageY = 218.f;
 
         static float stageX(int i) { return kW / 2.f + (i - 2.5f) * 72.f; }
 
@@ -307,6 +450,7 @@ namespace {
             lbl->setAnchorPoint(anchor);
             lbl->setPosition(pos);
             m_panel->addChild(lbl);
+            m_allLabels.push_back(lbl);
             return lbl;
         }
 
@@ -320,13 +464,17 @@ namespace {
 
         CCNode* m_panel = nullptr;
         CCMenu* m_menu = nullptr;
+        CCScale9Sprite* m_bgSpr = nullptr;
+        CCScale9Sprite* m_borderSpr = nullptr;
         CCMenuItemSpriteExtra* m_stageBtns[6] = {nullptr}; 
+        CCLabelBMFont* m_titleLabel = nullptr;
         CCLabelBMFont* m_desc = nullptr;
         CCLabelBMFont* m_opLabel = nullptr;
+        std::vector<CCLabelBMFont*> m_allLabels;
+        std::vector<CCMenuItemSpriteExtra*> m_allButtons;
     };
 
     CCMenuItemSpriteExtra* makeIBButton(CCObject* target, SEL_MenuHandler cb) {
-        // <--- Botón del menú principal cambiado a "PB" y color gris (GJ_button_04) --->
         auto spr = ButtonSprite::create("PB", 36, true, "bigFont.fnt", "GJ_button_04.png", 30.f, 0.7f);
         auto btn = CCMenuItemSpriteExtra::create(spr, nullptr, target, cb);
         btn->setID("ai.predictivebuffer/ib-button");
@@ -336,21 +484,23 @@ namespace {
 }
 
 namespace ib {
-
     void onStageChanged() {
         if (IBHud::s_inst) IBHud::s_inst->refresh();
+        if (auto scene = CCDirector::sharedDirector()->getRunningScene()) {
+            if (auto menu = scene->getChildByID("ai.predictivebuffer/menu")) {
+                static_cast<IBMenu*>(menu)->applyColors();
+                static_cast<IBMenu*>(menu)->refresh();
+            }
+        }
     }
-
     void onSaved(int) {
         if (IBHud::s_inst) IBHud::s_inst->flash();
     }
-
     void attachHud(CCNode* parent) {
         if (!parent) return;
         auto hud = IBHud::create();
         if (hud) parent->addChild(hud, 5000);
     }
-
     void openMenu() {
         auto scene = CCDirector::sharedDirector()->getRunningScene();
         if (!scene) return;
@@ -360,7 +510,6 @@ namespace ib {
         menu->setID("ai.predictivebuffer/menu");
         scene->addChild(menu, 100000);
     }
-
 }
 
 class $modify(IBMenuLayer, MenuLayer) {
