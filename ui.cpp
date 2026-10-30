@@ -29,31 +29,47 @@ namespace {
     class ColorTargetLayer : public CCLayerColor {
     protected:
         bool init() {
-            // Fondo oscuro semi-transparente para la ventana de colores
-            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 150))) return false;
+            // Fondo oscuro menos opaco para dejar ver el juego
+            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 80))) return false;
             this->setTouchEnabled(true);
             this->setKeypadEnabled(true);
 
             auto winSize = CCDirector::sharedDirector()->getWinSize();
+            
+            // Panel contenedor para la animación
+            m_panel = CCLayerColor::create(ccc4(0, 0, 0, 0));
+            m_panel->setContentSize({240.f, 260.f});
+            m_panel->setPosition({winSize.width / 2.f, winSize.height / 2.f});
+            m_panel->setCascadeOpacityEnabled(true);
+            this->addChild(m_panel);
+
+            // Fondo redondeado idéntico al menú principal
+            auto border = CCScale9Sprite::create("GJ_square01.png");
+            border->setContentSize({246.f, 266.f});
+            border->setPosition({120.f, 130.f}); 
+            border->setColor(intToColor(ib::cfgColorBorder()));
+            m_panel->addChild(border);
+
             auto bg = CCScale9Sprite::create("GJ_square01.png");
             bg->setContentSize({240.f, 260.f});
-            bg->setPosition({winSize.width / 2.f, winSize.height / 2.f});
-            bg->setColor({30, 30, 30});
-            this->addChild(bg);
+            bg->setPosition({120.f, 130.f}); 
+            bg->setColor(intToColor(ib::cfgColorBg()));
+            m_panel->addChild(bg);
 
-            auto title = CCLabelBMFont::create("Select Target", "goldFont.fnt");
+            auto title = CCLabelBMFont::create("Select Target", "bigFont.fnt");
             title->setScale(0.7f);
-            title->setPosition({winSize.width / 2.f, winSize.height / 2.f + 100.f});
-            this->addChild(title);
+            title->setColor(intToColor(ib::cfgColorText()));
+            title->setPosition({120.f, 230.f}); 
+            m_panel->addChild(title);
 
             auto menu = CCMenu::create();
-            menu->setPosition({winSize.width / 2.f, winSize.height / 2.f});
-            this->addChild(menu);
+            menu->setPosition({120.f, 130.f}); 
+            m_panel->addChild(menu);
 
             auto makeBtn = [&](const char* text, SEL_MenuHandler cb, float y) {
-                auto btn = CCMenuItemSpriteExtra::create(
-                    ButtonSprite::create(text, "bigFont.fnt", "GJ_button_04.png", 0.5f),
-                    this, cb);
+                auto spr = ButtonSprite::create(text, "bigFont.fnt", "GJ_button_04.png", 0.5f);
+                auto btn = CCMenuItemSpriteExtra::create(spr, this, cb);
+                btn->setColor(intToColor(ib::cfgColorBtn()));
                 btn->setPosition({0, y});
                 menu->addChild(btn);
             };
@@ -63,11 +79,21 @@ namespace {
             makeBtn("Texts", menu_selector(ColorTargetLayer::onText), -20.f);
             makeBtn("Buttons", menu_selector(ColorTargetLayer::onBtn), -60.f);
 
-            auto closeBtn = CCMenuItemSpriteExtra::create(
-                ButtonSprite::create("X", "bigFont.fnt", "GJ_button_04.png", 0.5f),
-                this, menu_selector(ColorTargetLayer::onClose));
-            closeBtn->setPosition({100.f, 110.f});
+            auto sprClose = ButtonSprite::create("X", "bigFont.fnt", "GJ_button_04.png", 0.5f);
+            auto closeBtn = CCMenuItemSpriteExtra::create(sprClose, this, menu_selector(ColorTargetLayer::onClose));
+            closeBtn->setColor(intToColor(ib::cfgColorBtn()));
+            closeBtn->setPosition({100.f, 110.f}); 
             menu->addChild(closeBtn);
+
+            // --- ANIMACIÓN DE APERTURA ---
+            m_panel->setScale(0.5f);
+            m_panel->setOpacity(0);
+            
+            auto panelFadeIn = CCFadeTo::create(0.15f, 255);
+            auto scaleIn = CCScaleTo::create(0.2f, 1.0f);
+            auto easeScaleIn = CCEaseBackOut::create(scaleIn);
+            
+            m_panel->runAction(CCSpawn::create(panelFadeIn, easeScaleIn, nullptr));
 
             return true;
         }
@@ -124,18 +150,33 @@ namespace {
         }
 
         void onClose(CCObject*) {
+            this->setTouchEnabled(false);
+            
+            auto panelFadeOut = CCFadeTo::create(0.15f, 0);
+            auto scaleOut = CCScaleTo::create(0.15f, 0.7f);
+            auto easeScaleOut = CCEaseBackIn::create(scaleOut);
+            
+            auto cleanup = CCCallFunc::create(this, callfunc_selector(ColorTargetLayer::doCleanup));
+            
+            m_panel->runAction(CCSequence::create(
+                CCSpawn::create(panelFadeOut, easeScaleOut, nullptr),
+                cleanup,
+                nullptr
+            ));
+        }
+
+        void doCleanup() {
             this->removeFromParentAndCleanup(true);
         }
 
-        void keyBackClicked() override {
-            this->onClose(nullptr);
-        }
-
+        void keyBackClicked() override { this->onClose(nullptr); }
         void registerWithTouchDispatcher() override {
             CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this, -700, true);
         }
-
         bool ccTouchBegan(CCTouch*, CCEvent*) override { return true; }
+
+    private:
+        CCLayerColor* m_panel = nullptr;
     };
 
     class IBHud : public CCLayer {
@@ -283,8 +324,8 @@ namespace {
         }
 
         bool setup() {
-            // Fondo oscuro con opacidad 140 como pediste
-            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 140))) return false;
+            // Fondo oscuro con opacidad 80 para ver el nivel
+            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 80))) return false;
             this->setTouchEnabled(true);
             this->setKeypadEnabled(true);
 
@@ -320,6 +361,7 @@ namespace {
                 this, menu_selector(IBMenu::onPalette));
             paletteBtn->setPosition({kW - 45.f, kH - 22.f});
             m_menu->addChild(paletteBtn);
+            m_allButtons.push_back(paletteBtn);
             // ----------------------------------------
 
             for (int i = 0; i < ib::kStageCount; ++i) {
