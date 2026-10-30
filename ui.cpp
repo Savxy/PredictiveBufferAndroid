@@ -26,10 +26,10 @@ namespace {
         return (c.r << 16) | (c.g << 8) | c.b;
     }
 
-    // Ventana modal simple para elegir qué parte pintar (reemplaza al Popup)
     class ColorTargetLayer : public CCLayerColor {
     protected:
         bool init() {
+            // Fondo oscuro semi-transparente para la ventana de colores
             if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 150))) return false;
             this->setTouchEnabled(true);
             this->setKeypadEnabled(true);
@@ -283,6 +283,7 @@ namespace {
         }
 
         bool setup() {
+            // Fondo oscuro con opacidad 140 como pediste
             if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 140))) return false;
             this->setTouchEnabled(true);
             this->setKeypadEnabled(true);
@@ -313,18 +314,11 @@ namespace {
             m_menu->setTouchPriority(-701);
             m_panel->addChild(m_menu);
 
-            // --- BOTÓN PALETA ---
-            auto paletteDraw = CCDrawNode::create();
-            paletteDraw->drawDot({0, 0}, 14.f, {255, 255, 255, 255});
-            paletteDraw->drawDot({-6, 6}, 3.f, {255, 0, 0, 255});
-            paletteDraw->drawDot({6, 6}, 3.f, {0, 255, 0, 255});
-            paletteDraw->drawDot({6, -6}, 3.f, {0, 0, 255, 255});
-            paletteDraw->drawDot({-6, -6}, 3.f, {255, 255, 0, 255});
-            paletteDraw->drawDot({0, 0}, 4.f, {0, 0, 0, 0}); 
-            
+            // --- BOTÓN COLORS ---
             auto paletteBtn = CCMenuItemSpriteExtra::create(
-                paletteDraw, this, menu_selector(IBMenu::onPalette));
-            paletteBtn->setPosition({kW - 35.f, kH - 25.f});
+                ButtonSprite::create("COLORS", 60, true, "bigFont.fnt", "GJ_button_04.png", 24.f, 0.5f),
+                this, menu_selector(IBMenu::onPalette));
+            paletteBtn->setPosition({kW - 45.f, kH - 22.f});
             m_menu->addChild(paletteBtn);
             // ----------------------------------------
 
