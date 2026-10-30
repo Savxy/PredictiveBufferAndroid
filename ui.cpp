@@ -33,32 +33,33 @@ namespace {
             m_parentMenu = parentMenu;
             m_parentMenu->retain();
 
-            // Usamos opacidad 120 para evitar el bug del cuadro negro en Android
-            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 120))) return false;
+            // Fondo 100% transparente (sin cuadrados negros)
+            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 0))) return false;
             this->setTouchEnabled(true);
             this->setKeypadEnabled(true);
 
             auto winSize = CCDirector::sharedDirector()->getWinSize();
             
-            m_panel = CCLayerColor::create(ccc4(0, 0, 0, 0));
-            m_panel->setContentSize({240.f, 320.f});
-            m_panel->setPosition({winSize.width / 2.f, winSize.height / 2.f});
+            // CORRECCIÓN MATEMÁTICA: Calculamos la posición para que esté centrado
+            m_panel = CCLayerColor::create(ccc4(0, 0, 0, 0), 240.f, 320.f);
+            m_panel->setPosition({(winSize.width - 240.f) / 2.f, (winSize.height - 320.f) / 2.f});
             m_panel->setCascadeOpacityEnabled(true);
             this->addChild(m_panel);
 
+            // El fondo de color ahora sí está perfectamente centrado
             auto bgColor = CCLayerColor::create(ccc4ToB(intToColor(ib::cfgColorBg())), 240.f, 320.f);
             bgColor->setPosition({0.f, 0.f});
             m_panel->addChild(bgColor, -1);
 
             auto border = CCScale9Sprite::create("GJ_square01.png");
             border->setContentSize({246.f, 326.f});
-            border->setPosition({0.f, 0.f}); 
+            border->setPosition({120.f, 160.f}); // Centrado en el panel
             border->setColor(intToColor(ib::cfgColorBorder()));
             m_panel->addChild(border, 0);
 
             auto bg = CCScale9Sprite::create("GJ_square01.png");
             bg->setContentSize({240.f, 320.f});
-            bg->setPosition({0.f, 0.f}); 
+            bg->setPosition({120.f, 160.f}); // Centrado en el panel
             bg->setColor(intToColor(ib::cfgColorBg()));
             bg->setOpacity(200); 
             m_panel->addChild(bg, 1);
@@ -66,11 +67,11 @@ namespace {
             auto title = CCLabelBMFont::create("Select Target", "bigFont.fnt");
             title->setScale(0.7f);
             title->setColor(intToColor(ib::cfgColorText()));
-            title->setPosition({0.f, 140.f}); 
+            title->setPosition({120.f, 270.f}); 
             m_panel->addChild(title, 2);
 
             auto menu = CCMenu::create();
-            menu->setPosition({0.f, 0.f}); 
+            menu->setPosition({120.f, 160.f}); // Centrado en el panel
             m_panel->addChild(menu, 2);
 
             auto makeBtn = [&](const char* text, SEL_MenuHandler cb, float y) {
@@ -341,31 +342,32 @@ namespace {
         }
 
         bool setup() {
-            // Usamos opacidad 120 para evitar el bug del cuadro negro
-            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 120))) return false;
+            // Fondo 100% transparente
+            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 0))) return false;
             this->setTouchEnabled(true);
             this->setKeypadEnabled(true);
 
             auto win = CCDirector::sharedDirector()->getWinSize();
             
-            m_panel = CCLayerColor::create(ccc4(0, 0, 0, 0));
-            m_panel->setContentSize({kW, kH});
+            // Posición centrada exacta
+            m_panel = CCLayerColor::create(ccc4(0, 0, 0, 0), kW, kH);
             m_panel->setPosition({(win.width - kW) / 2.f, (win.height - kH) / 2.f});
             m_panel->setCascadeOpacityEnabled(true);
             this->addChild(m_panel);
 
+            // Fondo de color centrado
             auto bgColor = CCLayerColor::create(ccc4ToB(intToColor(ib::cfgColorBg())), kW, kH);
-            bgColor->setPosition({kW / 2.f, kH / 2.f});
+            bgColor->setPosition({0.f, 0.f});
             m_panel->addChild(bgColor, -1);
 
             m_borderSpr = CCScale9Sprite::create("GJ_square01.png");
             m_borderSpr->setContentSize({kW + 6.f, kH + 6.f});
-            m_borderSpr->setPosition({kW / 2.f, kH / 2.f});
+            m_borderSpr->setPosition({kW / 2.f, kH / 2.f}); // Centrado en el panel
             m_panel->addChild(m_borderSpr, 0);
 
             m_bgSpr = CCScale9Sprite::create("GJ_square01.png");
             m_bgSpr->setContentSize({kW, kH});
-            m_bgSpr->setPosition({kW / 2.f, kH / 2.f});
+            m_bgSpr->setPosition({kW / 2.f, kH / 2.f}); // Centrado en el panel
             m_bgSpr->setOpacity(200); 
             m_panel->addChild(m_bgSpr, 1);
 
@@ -373,7 +375,7 @@ namespace {
             addLabel("Stage  (ticks: All / Wave)", "chatFont.fnt", 0.85f, {kW / 2.f, kH - 48.f});
 
             m_menu = CCMenu::create();
-            m_menu->setPosition({0.f, 0.f});
+            m_menu->setPosition({0.f, 0.f}); // El menú usa coordenadas relativas
             m_menu->setTouchPriority(-701);
             m_panel->addChild(m_menu, 2);
 
@@ -393,6 +395,7 @@ namespace {
                 btn->setPosition({stageX(i), kStageY});
                 m_menu->addChild(btn);
                 m_stageBtns[i] = btn; 
+                m_allButtons.push_back(btn);
             }
 
             m_desc = addLabel("", "chatFont.fnt", 0.8f, {kW / 2.f, kStageY - 30.f});
@@ -453,7 +456,6 @@ namespace {
                 lbl->setColor(intToColor(ib::cfgColorText()));
             }
 
-            // Pintamos los botones de utilidad (OK, -, +, COLORS)
             for (auto btn : m_allButtons) {
                 btn->setColor(intToColor(ib::cfgColorBtn()));
                 if (ib::cfgColorBtn() == 0xFFFFFF) {
@@ -471,7 +473,6 @@ namespace {
         void refresh() {
             const int s = ib::S().stage;
 
-            // Pintamos los botones de etapa
             for (int i = 0; i < ib::kStageCount; ++i) {
                 if (m_stageBtns[i]) {
                     if (i == s) {
@@ -490,7 +491,7 @@ namespace {
         }
 
         void onPalette(CCObject*) {
-            this->removeFromParent(); 
+            this->setVisible(false); // Se oculta para que no estorbe
             
             auto popup = ColorTargetLayer::create(this);
             if (popup) {
