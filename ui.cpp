@@ -29,45 +29,44 @@ namespace {
     class ColorTargetLayer : public CCLayerColor {
     protected:
         bool init() {
-            // Fondo oscuro menos opaco para dejar ver el juego
-            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 80))) return false;
+            // Opacidad de 20 para que el fondo del juego se vea casi perfectamente
+            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 20))) return false;
             this->setTouchEnabled(true);
             this->setKeypadEnabled(true);
 
             auto winSize = CCDirector::sharedDirector()->getWinSize();
             
-            // Panel contenedor para la animación
             m_panel = CCLayerColor::create(ccc4(0, 0, 0, 0));
             m_panel->setContentSize({240.f, 260.f});
             m_panel->setPosition({winSize.width / 2.f, winSize.height / 2.f});
             m_panel->setCascadeOpacityEnabled(true);
             this->addChild(m_panel);
 
-            // Fondo redondeado idéntico al menú principal
             auto border = CCScale9Sprite::create("GJ_square01.png");
             border->setContentSize({246.f, 266.f});
-            border->setPosition({120.f, 130.f}); 
+            border->setPosition({0.f, 0.f}); 
             border->setColor(intToColor(ib::cfgColorBorder()));
             m_panel->addChild(border);
 
             auto bg = CCScale9Sprite::create("GJ_square01.png");
             bg->setContentSize({240.f, 260.f});
-            bg->setPosition({120.f, 130.f}); 
+            bg->setPosition({0.f, 0.f}); 
             bg->setColor(intToColor(ib::cfgColorBg()));
             m_panel->addChild(bg);
 
             auto title = CCLabelBMFont::create("Select Target", "bigFont.fnt");
             title->setScale(0.7f);
             title->setColor(intToColor(ib::cfgColorText()));
-            title->setPosition({120.f, 230.f}); 
+            title->setPosition({0.f, 100.f}); 
             m_panel->addChild(title);
 
             auto menu = CCMenu::create();
-            menu->setPosition({120.f, 130.f}); 
+            menu->setPosition({0.f, 0.f}); 
             m_panel->addChild(menu);
 
             auto makeBtn = [&](const char* text, SEL_MenuHandler cb, float y) {
                 auto spr = ButtonSprite::create(text, "bigFont.fnt", "GJ_button_04.png", 0.5f);
+                spr->setCascadeColorEnabled(true);
                 auto btn = CCMenuItemSpriteExtra::create(spr, this, cb);
                 btn->setColor(intToColor(ib::cfgColorBtn()));
                 btn->setPosition({0, y});
@@ -80,6 +79,7 @@ namespace {
             makeBtn("Buttons", menu_selector(ColorTargetLayer::onBtn), -60.f);
 
             auto sprClose = ButtonSprite::create("X", "bigFont.fnt", "GJ_button_04.png", 0.5f);
+            sprClose->setCascadeColorEnabled(true);
             auto closeBtn = CCMenuItemSpriteExtra::create(sprClose, this, menu_selector(ColorTargetLayer::onClose));
             closeBtn->setColor(intToColor(ib::cfgColorBtn()));
             closeBtn->setPosition({100.f, 110.f}); 
@@ -324,8 +324,8 @@ namespace {
         }
 
         bool setup() {
-            // Fondo oscuro con opacidad 80 para ver el nivel
-            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 80))) return false;
+            // Opacidad de 20 para ver el juego de fondo
+            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 20))) return false;
             this->setTouchEnabled(true);
             this->setKeypadEnabled(true);
 
@@ -356,9 +356,9 @@ namespace {
             m_panel->addChild(m_menu);
 
             // --- BOTÓN COLORS ---
-            auto paletteBtn = CCMenuItemSpriteExtra::create(
-                ButtonSprite::create("COLORS", 60, true, "bigFont.fnt", "GJ_button_04.png", 24.f, 0.5f),
-                this, menu_selector(IBMenu::onPalette));
+            auto sprCol = ButtonSprite::create("COLORS", 60, true, "bigFont.fnt", "GJ_button_04.png", 24.f, 0.5f);
+            sprCol->setCascadeColorEnabled(true);
+            auto paletteBtn = CCMenuItemSpriteExtra::create(sprCol, this, menu_selector(IBMenu::onPalette));
             paletteBtn->setPosition({kW - 45.f, kH - 22.f});
             m_menu->addChild(paletteBtn);
             m_allButtons.push_back(paletteBtn);
@@ -367,6 +367,7 @@ namespace {
             for (int i = 0; i < ib::kStageCount; ++i) {
                 auto spr = ButtonSprite::create(ib::kStages[i].label, 50, true, "bigFont.fnt",
                                                 "GJ_button_04.png", 28.f, 0.5f);
+                spr->setCascadeColorEnabled(true);
                 auto btn = CCMenuItemSpriteExtra::create(spr, nullptr, this, menu_selector(IBMenu::onStage));
                 btn->setTag(i);
                 btn->setPosition({stageX(i), kStageY});
@@ -384,25 +385,25 @@ namespace {
 
             m_opLabel = addLabel("", "bigFont.fnt", 0.38f, {26.f, 88.f}, {0.f, 0.5f});
             
-            auto minus = CCMenuItemSpriteExtra::create(
-                ButtonSprite::create("-", 28, true, "bigFont.fnt", "GJ_button_04.png", 26.f, 0.7f),
-                nullptr, this, menu_selector(IBMenu::onOpacity));
+            auto sprMinus = ButtonSprite::create("-", 28, true, "bigFont.fnt", "GJ_button_04.png", 26.f, 0.7f);
+            sprMinus->setCascadeColorEnabled(true);
+            auto minus = CCMenuItemSpriteExtra::create(sprMinus, nullptr, this, menu_selector(IBMenu::onOpacity));
             minus->setTag(-1);
             minus->setPosition({kW - 85.f, 88.f}); 
             m_menu->addChild(minus);
             m_allButtons.push_back(minus);
             
-            auto plus = CCMenuItemSpriteExtra::create(
-                ButtonSprite::create("+", 28, true, "bigFont.fnt", "GJ_button_04.png", 26.f, 0.7f),
-                nullptr, this, menu_selector(IBMenu::onOpacity));
+            auto sprPlus = ButtonSprite::create("+", 28, true, "bigFont.fnt", "GJ_button_04.png", 26.f, 0.7f);
+            sprPlus->setCascadeColorEnabled(true);
+            auto plus = CCMenuItemSpriteExtra::create(sprPlus, nullptr, this, menu_selector(IBMenu::onOpacity));
             plus->setTag(1);
             plus->setPosition({kW - 35.f, 88.f}); 
             m_menu->addChild(plus);
             m_allButtons.push_back(plus);
 
-            auto ok = CCMenuItemSpriteExtra::create(
-                ButtonSprite::create("OK", 80, true, "bigFont.fnt", "GJ_button_04.png", 30.f, 0.8f),
-                nullptr, this, menu_selector(IBMenu::onClose));
+            auto sprOk = ButtonSprite::create("OK", 80, true, "bigFont.fnt", "GJ_button_04.png", 30.f, 0.8f);
+            sprOk->setCascadeColorEnabled(true);
+            auto ok = CCMenuItemSpriteExtra::create(sprOk, nullptr, this, menu_selector(IBMenu::onClose));
             ok->setPosition({kW / 2.f, 30.f});
             m_menu->addChild(ok);
             m_allButtons.push_back(ok);
@@ -434,9 +435,8 @@ namespace {
                 lbl->setColor(intToColor(ib::cfgColorText()));
             }
 
-            for (size_t i = 0; i < m_allButtons.size(); ++i) {
-                if (i < ib::kStageCount && i == ib::S().stage) continue;
-                m_allButtons[i]->setColor(intToColor(ib::cfgColorBtn()));
+            for (auto btn : m_allButtons) {
+                btn->setColor(intToColor(ib::cfgColorBtn()));
             }
         }
 
@@ -557,6 +557,7 @@ namespace {
 
     CCMenuItemSpriteExtra* makeIBButton(CCObject* target, SEL_MenuHandler cb) {
         auto spr = ButtonSprite::create("PB", 36, true, "bigFont.fnt", "GJ_button_04.png", 30.f, 0.7f);
+        spr->setCascadeColorEnabled(true);
         auto btn = CCMenuItemSpriteExtra::create(spr, nullptr, target, cb);
         btn->setID("ai.predictivebuffer/ib-button");
         return btn;
