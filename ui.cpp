@@ -31,7 +31,8 @@ namespace {
         CCNode* m_parentMenu = nullptr;
         bool init(CCNode* parentMenu) {
             m_parentMenu = parentMenu;
-            // Opacidad 0 para que el fondo sea 100% transparente
+            m_parentMenu->retain();
+
             if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 0))) return false;
             this->setTouchEnabled(true);
             this->setKeypadEnabled(true);
@@ -39,32 +40,38 @@ namespace {
             auto winSize = CCDirector::sharedDirector()->getWinSize();
             
             m_panel = CCLayerColor::create(ccc4(0, 0, 0, 0));
-            m_panel->setContentSize({240.f, 260.f});
+            m_panel->setContentSize({240.f, 320.f});
             m_panel->setPosition({winSize.width / 2.f, winSize.height / 2.f});
             m_panel->setCascadeOpacityEnabled(true);
             this->addChild(m_panel);
 
+            auto bgColor = CCLayerColor::create(ccc4ToB(intToColor(ib::cfgColorBg())), 240.f, 320.f);
+            bgColor->setPosition({0.f, 0.f});
+            m_panel->addChild(bgColor, -1);
+
             auto border = CCScale9Sprite::create("GJ_square01.png");
-            border->setContentSize({246.f, 266.f});
+            border->setContentSize({246.f, 326.f});
             border->setPosition({0.f, 0.f}); 
             border->setColor(intToColor(ib::cfgColorBorder()));
-            m_panel->addChild(border);
+            m_panel->addChild(border, 0);
 
             auto bg = CCScale9Sprite::create("GJ_square01.png");
-            bg->setContentSize({240.f, 260.f});
+            bg->setContentSize({240.f, 320.f});
             bg->setPosition({0.f, 0.f}); 
             bg->setColor(intToColor(ib::cfgColorBg()));
-            m_panel->addChild(bg);
+            bg->setOpacity(200); 
+            m_panel->addChild(bg, 1);
 
+            // Texto más arriba y centrado
             auto title = CCLabelBMFont::create("Select Target", "bigFont.fnt");
             title->setScale(0.7f);
             title->setColor(intToColor(ib::cfgColorText()));
-            title->setPosition({0.f, 100.f}); 
-            m_panel->addChild(title);
+            title->setPosition({0.f, 140.f}); 
+            m_panel->addChild(title, 2);
 
             auto menu = CCMenu::create();
             menu->setPosition({0.f, 0.f}); 
-            m_panel->addChild(menu);
+            m_panel->addChild(menu, 2);
 
             auto makeBtn = [&](const char* text, SEL_MenuHandler cb, float y) {
                 auto spr = ButtonSprite::create(text, "bigFont.fnt", "GJ_button_04.png", 0.5f);
@@ -75,17 +82,18 @@ namespace {
                 menu->addChild(btn);
             };
 
-            // Separación uniforme: 70, 20, -30, -80
-            makeBtn("Background", menu_selector(ColorTargetLayer::onBg), 70.f);
+            // Separación perfecta de 60 píxeles entre cada botón
+            makeBtn("Background", menu_selector(ColorTargetLayer::onBg), 80.f);
             makeBtn("Border", menu_selector(ColorTargetLayer::onBorder), 20.f);
-            makeBtn("Texts", menu_selector(ColorTargetLayer::onText), -30.f);
-            makeBtn("Buttons", menu_selector(ColorTargetLayer::onBtn), -80.f);
+            makeBtn("Texts", menu_selector(ColorTargetLayer::onText), -40.f);
+            makeBtn("Buttons", menu_selector(ColorTargetLayer::onBtn), -100.f);
 
+            // Botón X en la esquina superior derecha, sin chocar con el título
             auto sprClose = ButtonSprite::create("X", "bigFont.fnt", "GJ_button_04.png", 0.5f);
             sprClose->setCascadeColorEnabled(true);
             auto closeBtn = CCMenuItemSpriteExtra::create(sprClose, this, menu_selector(ColorTargetLayer::onClose));
             closeBtn->setColor(intToColor(ib::cfgColorBtn()));
-            closeBtn->setPosition({100.f, 110.f}); 
+            closeBtn->setPosition({105.f, 145.f}); 
             menu->addChild(closeBtn);
 
             // --- ANIMACIÓN DE APERTURA ---
@@ -102,6 +110,10 @@ namespace {
         }
 
     public:
+        static cocos2d::ccColor4B ccc4ToB(ccColor3B c) {
+            return {c.r, c.g, c.b, 255};
+        }
+
         static ColorTargetLayer* create(CCNode* parentMenu) {
             auto ret = new ColorTargetLayer();
             if (ret && ret->init(parentMenu)) {
@@ -169,7 +181,11 @@ namespace {
         }
 
         void doCleanup() {
-            if (m_parentMenu) m_parentMenu->setVisible(true);
+            if (m_parentMenu) {
+                CCDirector::sharedDirector()->getRunningScene()->addChild(m_parentMenu, 100000);
+                m_parentMenu->release();
+                m_parentMenu = nullptr;
+            }
             this->removeFromParentAndCleanup(true);
         }
 
@@ -328,7 +344,6 @@ namespace {
         }
 
         bool setup() {
-            // Opacidad 0 para ver el juego de fondo perfectamente
             if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 0))) return false;
             this->setTouchEnabled(true);
             this->setKeypadEnabled(true);
@@ -341,15 +356,20 @@ namespace {
             m_panel->setCascadeOpacityEnabled(true);
             this->addChild(m_panel);
 
+            auto bgColor = CCLayerColor::create(ccc4ToB(intToColor(ib::cfgColorBg())), kW, kH);
+            bgColor->setPosition({kW / 2.f, kH / 2.f});
+            m_panel->addChild(bgColor, -1);
+
             m_borderSpr = CCScale9Sprite::create("GJ_square01.png");
             m_borderSpr->setContentSize({kW + 6.f, kH + 6.f});
             m_borderSpr->setPosition({kW / 2.f, kH / 2.f});
-            m_panel->addChild(m_borderSpr);
+            m_panel->addChild(m_borderSpr, 0);
 
             m_bgSpr = CCScale9Sprite::create("GJ_square01.png");
             m_bgSpr->setContentSize({kW, kH});
             m_bgSpr->setPosition({kW / 2.f, kH / 2.f});
-            m_panel->addChild(m_bgSpr);
+            m_bgSpr->setOpacity(200); 
+            m_panel->addChild(m_bgSpr, 1);
 
             m_titleLabel = addLabel("Predictive Input Buffer", "bigFont.fnt", 0.62f, {kW / 2.f - 30.f, kH - 22.f});
             addLabel("Stage  (ticks: All / Wave)", "chatFont.fnt", 0.85f, {kW / 2.f, kH - 48.f});
@@ -357,16 +377,14 @@ namespace {
             m_menu = CCMenu::create();
             m_menu->setPosition({0.f, 0.f});
             m_menu->setTouchPriority(-701);
-            m_panel->addChild(m_menu);
+            m_panel->addChild(m_menu, 2);
 
-            // --- BOTÓN COLORS ---
             auto sprCol = ButtonSprite::create("COLORS", 60, true, "bigFont.fnt", "GJ_button_04.png", 24.f, 0.5f);
             sprCol->setCascadeColorEnabled(true);
             auto paletteBtn = CCMenuItemSpriteExtra::create(sprCol, this, menu_selector(IBMenu::onPalette));
             paletteBtn->setPosition({kW - 45.f, kH - 22.f});
             m_menu->addChild(paletteBtn);
             m_allButtons.push_back(paletteBtn);
-            // ----------------------------------------
 
             for (int i = 0; i < ib::kStageCount; ++i) {
                 auto spr = ButtonSprite::create(ib::kStages[i].label, 50, true, "bigFont.fnt",
@@ -415,7 +433,6 @@ namespace {
             refresh();
             applyColors();
 
-            // --- ANIMACIÓN DE APERTURA ---
             this->setOpacity(0);
             m_panel->setScale(0.5f);
             m_panel->setOpacity(0);
@@ -465,8 +482,8 @@ namespace {
         }
 
         void onPalette(CCObject*) {
-            // Ocultamos el menú principal mientras la paleta está abierta
-            this->setVisible(false);
+            this->removeFromParent(); 
+            
             auto popup = ColorTargetLayer::create(this);
             if (popup) {
                 popup->setID("color-target-layer");
@@ -528,6 +545,10 @@ namespace {
         static constexpr float kH = 300.f;
         static constexpr float kStageY = 218.f;
 
+        static cocos2d::ccColor4B ccc4ToB(ccColor3B c) {
+            return {c.r, c.g, c.b, 255};
+        }
+
         static float stageX(int i) { return kW / 2.f + (i - 2.5f) * 72.f; }
 
         CCLabelBMFont* addLabel(const char* text, const char* font, float scale, CCPoint pos,
@@ -536,7 +557,7 @@ namespace {
             lbl->setScale(scale);
             lbl->setAnchorPoint(anchor);
             lbl->setPosition(pos);
-            m_panel->addChild(lbl);
+            m_panel->addChild(lbl, 2); 
             m_allLabels.push_back(lbl);
             return lbl;
         }
