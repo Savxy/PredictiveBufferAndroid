@@ -62,6 +62,16 @@ namespace ib {
     void cfgSetShowBg(bool v);
     int cfgOpacity();
     void cfgSetOpacity(int v);
+    
+    // Colores
+    int cfgColorBg();
+    void cfgSetColorBg(int c);
+    int cfgColorBorder();
+    void cfgSetColorBorder(int c);
+    int cfgColorText();
+    void cfgSetColorText(int c);
+    int cfgColorBtn();
+    void cfgSetColorBtn(int c);
 
     void createGhosts(PlayLayer* pl);
     void destroyGhosts();
