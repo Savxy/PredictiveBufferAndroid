@@ -62,6 +62,20 @@ namespace ib {
     bool cfgShowBg() { return Mod::get()->getSavedValue<bool>("show-bg", true); }
     void cfgSetShowBg(bool v) { Mod::get()->setSavedValue<bool>("show-bg", v); }
 
+    // --- FUNCIONES DE COLORES ---
+    int cfgColorBg() { return Mod::get()->getSavedValue<int>("color-bg", 0x12161E); }
+    void cfgSetColorBg(int c) { Mod::get()->setSavedValue<int>("color-bg", c); }
+
+    int cfgColorBorder() { return Mod::get()->getSavedValue<int>("color-border", 0xFFFFFF); }
+    void cfgSetColorBorder(int c) { Mod::get()->setSavedValue<int>("color-border", c); }
+
+    int cfgColorText() { return Mod::get()->getSavedValue<int>("color-text", 0xFFFFFF); }
+    void cfgSetColorText(int c) { Mod::get()->setSavedValue<int>("color-text", c); }
+
+    int cfgColorBtn() { return Mod::get()->getSavedValue<int>("color-btn", 0xFFFFFF); }
+    void cfgSetColorBtn(int c) { Mod::get()->setSavedValue<int>("color-btn", c); }
+    // ----------------------------
+
     void resetRuntime() {
         auto& st = S();
         st.simulating = false;
