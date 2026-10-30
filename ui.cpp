@@ -30,9 +30,9 @@ namespace {
         if (auto spr = btn->getChildByType<ButtonSprite>(0)) {
             if (auto lbl = spr->getChildByType<CCLabelBMFont>(0)) {
                 if (col.r > 200 && col.g > 200 && col.b > 200) {
-                    lbl->setColor(ccc3(0, 0, 0)); // Texto negro si es claro
+                    lbl->setColor(ccc3(0, 0, 0)); // Texto negro para fondos claros
                 } else {
-                    lbl->setColor(ccc3(255, 255, 255)); // Texto blanco si es oscuro
+                    lbl->setColor(ccc3(255, 255, 255)); // Texto blanco para fondos oscuros
                 }
             }
         }
@@ -53,34 +53,37 @@ namespace {
 
             auto winSize = CCDirector::sharedDirector()->getWinSize();
             
+            // Fondo oscuro
             m_dimBg = CCLayerColor::create(ccc4(0, 0, 0, 150), winSize.width, winSize.height);
             this->addChild(m_dimBg, -1);
 
-            // Panel más pequeño para que no se salga de la pantalla (200x280)
-            float kW = 200.f;
-            float kH = 280.f;
+            // Panel más pequeño (220x300)
+            float kW = 220.f;
+            float kH = 300.f;
             m_panel = CCLayer::create();
             m_panel->setContentSize({kW, kH});
+            m_panel->setAnchorPoint({0.f, 0.f}); // ANCHOR CORREGIDO
             m_panel->setPosition({(winSize.width - kW) / 2.f, (winSize.height - kH) / 2.f});
             this->addChild(m_panel);
 
-            // Borde en la capa 0
+            // Fondo del panel (Color puro)
+            auto bgColor = CCLayerColor::create(ccc4ToB(intToColor(ib::cfgColorBg())), kW, kH);
+            bgColor->setAnchorPoint({0.f, 0.f}); // ANCHOR CORREGIDO
+            bgColor->setPosition({0.f, 0.f});
+            m_panel->addChild(bgColor, 0);
+
+            // Borde redondeado
             auto border = CCScale9Sprite::create("GJ_square01.png");
             border->setContentSize({kW + 6.f, kH + 6.f});
             border->setPosition({kW / 2.f, kH / 2.f}); 
             border->setColor(intToColor(ib::cfgColorBorder()));
-            m_panel->addChild(border, 0);
+            m_panel->addChild(border, 1);
 
-            // Fondo en la capa 1 (color puro)
-            auto bgColor = CCLayerColor::create(ccc4ToB(intToColor(ib::cfgColorBg())), kW - 4.f, kH - 4.f);
-            bgColor->setPosition({kW / 2.f, kH / 2.f});
-            m_panel->addChild(bgColor, 1);
-
-            // Título alineado perfectamente
+            // Título perfectamente centrado
             auto title = CCLabelBMFont::create("Select Target", "bigFont.fnt");
             title->setScale(0.7f);
             title->setColor(intToColor(ib::cfgColorText()));
-            title->setPosition({kW / 2.f, 240.f}); 
+            title->setPosition({kW / 2.f, 260.f}); 
             m_panel->addChild(title, 2);
 
             auto menu = CCMenu::create();
@@ -102,15 +105,16 @@ namespace {
             makeBtn("Texts", menu_selector(ColorTargetLayer::onText), -40.f);
             makeBtn("Buttons", menu_selector(ColorTargetLayer::onBtn), -100.f);
 
-            // Botón X en la esquina
+            // Botón X
             auto sprClose = ButtonSprite::create("X", "bigFont.fnt", "GJ_button_04.png", 0.5f);
             sprClose->setCascadeColorEnabled(true);
             auto closeBtn = CCMenuItemSpriteExtra::create(sprClose, this, menu_selector(ColorTargetLayer::onClose));
             closeBtn->setColor(intToColor(ib::cfgColorBtn()));
             updateBtnText(closeBtn, intToColor(ib::cfgColorBtn()));
-            closeBtn->setPosition({85.f, 255.f}); 
+            closeBtn->setPosition({100.f, 135.f}); 
             menu->addChild(closeBtn);
 
+            // Animación
             m_panel->setScale(0.5f);
             m_dimBg->setOpacity(0);
             
@@ -359,20 +363,22 @@ namespace {
 
             m_panel = CCLayer::create();
             m_panel->setContentSize({kW, kH});
+            m_panel->setAnchorPoint({0.f, 0.f}); // ANCHOR CORREGIDO
             m_panel->setPosition({(win.width - kW) / 2.f, (win.height - kH) / 2.f});
             this->addChild(m_panel);
 
-            // Borde en la capa 0
+            // Fondo color puro
+            m_bgColor = CCLayerColor::create(ccc4ToB(intToColor(ib::cfgColorBg())), kW, kH);
+            m_bgColor->setAnchorPoint({0.f, 0.f}); // ANCHOR CORREGIDO
+            m_bgColor->setPosition({0.f, 0.f});
+            m_panel->addChild(m_bgColor, 0);
+
+            // Borde redondeado
             m_borderSpr = CCScale9Sprite::create("GJ_square01.png");
             m_borderSpr->setContentSize({kW + 6.f, kH + 6.f});
             m_borderSpr->setColor(intToColor(ib::cfgColorBorder()));
             m_borderSpr->setPosition({kW / 2.f, kH / 2.f});
-            m_panel->addChild(m_borderSpr, 0);
-
-            // Fondo en la capa 1 (color puro, sin filtros de textura)
-            m_bgColor = CCLayerColor::create(ccc4ToB(intToColor(ib::cfgColorBg())), kW - 4.f, kH - 4.f);
-            m_bgColor->setPosition({kW / 2.f, kH / 2.f});
-            m_panel->addChild(m_bgColor, 1);
+            m_panel->addChild(m_borderSpr, 1);
 
             m_titleLabel = addLabel("Predictive Input Buffer", "bigFont.fnt", 0.62f, {kW / 2.f - 30.f, kH - 22.f});
             addLabel("Stage  (ticks: All / Wave)", "chatFont.fnt", 0.85f, {kW / 2.f, kH - 48.f});
