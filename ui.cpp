@@ -64,36 +64,42 @@ namespace {
             return nullptr;
         }
 
-        // ARREGLADO: Sintaxis correcta de ColorPickPopup para Geode 5.11.2
         void onBg(CCObject*) {
-            auto popup = ColorPickPopup::create(intToColor(ib::cfgColorBg()), [](ccColor3B const& c) {
+            auto popup = ColorPickPopup::create(intToColor(ib::cfgColorBg()));
+            popup->setCallback(geode::Function<void(ccColor3B)>([this](ccColor3B const& c) {
                 ib::cfgSetColorBg(colorToInt(c));
                 ib::onStageChanged();
-            });
+            }));
             popup->show();
             this->onClose(nullptr);
         }
+        
         void onBorder(CCObject*) {
-            auto popup = ColorPickPopup::create(intToColor(ib::cfgColorBorder()), [](ccColor3B const& c) {
+            auto popup = ColorPickPopup::create(intToColor(ib::cfgColorBorder()));
+            popup->setCallback(geode::Function<void(ccColor3B)>([this](ccColor3B const& c) {
                 ib::cfgSetColorBorder(colorToInt(c));
                 ib::onStageChanged();
-            });
+            }));
             popup->show();
             this->onClose(nullptr);
         }
+        
         void onText(CCObject*) {
-            auto popup = ColorPickPopup::create(intToColor(ib::cfgColorText()), [](ccColor3B const& c) {
+            auto popup = ColorPickPopup::create(intToColor(ib::cfgColorText()));
+            popup->setCallback(geode::Function<void(ccColor3B)>([this](ccColor3B const& c) {
                 ib::cfgSetColorText(colorToInt(c));
                 ib::onStageChanged();
-            });
+            }));
             popup->show();
             this->onClose(nullptr);
         }
+        
         void onBtn(CCObject*) {
-            auto popup = ColorPickPopup::create(intToColor(ib::cfgColorBtn()), [](ccColor3B const& c) {
+            auto popup = ColorPickPopup::create(intToColor(ib::cfgColorBtn()));
+            popup->setCallback(geode::Function<void(ccColor3B)>([this](ccColor3B const& c) {
                 ib::cfgSetColorBtn(colorToInt(c));
                 ib::onStageChanged();
-            });
+            }));
             popup->show();
             this->onClose(nullptr);
         }
@@ -250,8 +256,8 @@ namespace {
 
             auto win = CCDirector::sharedDirector()->getWinSize();
             
-            // ARREGLADO: Usamos CCLayer en lugar de CCNode para que setOpacity funcione
-            m_panel = CCLayer::create();
+            // Usamos CCLayerColor para que funcione setOpacity
+            m_panel = CCLayerColor::create(ccc4(0, 0, 0, 0));
             m_panel->setContentSize({kW, kH});
             m_panel->setPosition({(win.width - kW) / 2.f, (win.height - kH) / 2.f});
             m_panel->setCascadeOpacityEnabled(true);
@@ -339,7 +345,7 @@ namespace {
             // --- ANIMACIÓN DE APERTURA ---
             this->setOpacity(0);
             m_panel->setScale(0.5f);
-            m_panel->setOpacity(0); // AHORA SÍ FUNCIONA, PORQUE M_PANEL ES UN CCLAYER
+            m_panel->setOpacity(0); // Ahora funciona porque m_panel es CCLayerColor
             
             auto fadeIn = CCFadeTo::create(0.15f, 255);
             auto panelFadeIn = CCFadeTo::create(0.15f, 255);
@@ -466,7 +472,7 @@ namespace {
             m_menu->addChild(toggler);
         }
 
-        CCLayer* m_panel = nullptr; // CAMBIADO DE CCNode A CCLayer
+        CCLayerColor* m_panel = nullptr; // CAMBIADO A CCLAYERCOLOR
         CCMenu* m_menu = nullptr;
         CCScale9Sprite* m_bgSpr = nullptr;
         CCScale9Sprite* m_borderSpr = nullptr;
