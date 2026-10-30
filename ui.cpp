@@ -28,9 +28,11 @@ namespace {
 
     class ColorTargetLayer : public CCLayerColor {
     protected:
-        bool init() {
-            // Opacidad de 20 para que el fondo del juego se vea casi perfectamente
-            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 20))) return false;
+        CCNode* m_parentMenu = nullptr;
+        bool init(CCNode* parentMenu) {
+            m_parentMenu = parentMenu;
+            // Opacidad 0 para que el fondo sea 100% transparente
+            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 0))) return false;
             this->setTouchEnabled(true);
             this->setKeypadEnabled(true);
 
@@ -73,10 +75,11 @@ namespace {
                 menu->addChild(btn);
             };
 
-            makeBtn("Background", menu_selector(ColorTargetLayer::onBg), 60.f);
+            // Separación uniforme: 70, 20, -30, -80
+            makeBtn("Background", menu_selector(ColorTargetLayer::onBg), 70.f);
             makeBtn("Border", menu_selector(ColorTargetLayer::onBorder), 20.f);
-            makeBtn("Texts", menu_selector(ColorTargetLayer::onText), -20.f);
-            makeBtn("Buttons", menu_selector(ColorTargetLayer::onBtn), -60.f);
+            makeBtn("Texts", menu_selector(ColorTargetLayer::onText), -30.f);
+            makeBtn("Buttons", menu_selector(ColorTargetLayer::onBtn), -80.f);
 
             auto sprClose = ButtonSprite::create("X", "bigFont.fnt", "GJ_button_04.png", 0.5f);
             sprClose->setCascadeColorEnabled(true);
@@ -99,9 +102,9 @@ namespace {
         }
 
     public:
-        static ColorTargetLayer* create() {
+        static ColorTargetLayer* create(CCNode* parentMenu) {
             auto ret = new ColorTargetLayer();
-            if (ret && ret->init()) {
+            if (ret && ret->init(parentMenu)) {
                 ret->autorelease();
                 return ret;
             }
@@ -166,6 +169,7 @@ namespace {
         }
 
         void doCleanup() {
+            if (m_parentMenu) m_parentMenu->setVisible(true);
             this->removeFromParentAndCleanup(true);
         }
 
@@ -324,8 +328,8 @@ namespace {
         }
 
         bool setup() {
-            // Opacidad de 20 para ver el juego de fondo
-            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 20))) return false;
+            // Opacidad 0 para ver el juego de fondo perfectamente
+            if (!CCLayerColor::initWithColor(ccc4(0, 0, 0, 0))) return false;
             this->setTouchEnabled(true);
             this->setKeypadEnabled(true);
 
@@ -461,7 +465,9 @@ namespace {
         }
 
         void onPalette(CCObject*) {
-            auto popup = ColorTargetLayer::create();
+            // Ocultamos el menú principal mientras la paleta está abierta
+            this->setVisible(false);
+            auto popup = ColorTargetLayer::create(this);
             if (popup) {
                 popup->setID("color-target-layer");
                 CCDirector::sharedDirector()->getRunningScene()->addChild(popup, 100000);
