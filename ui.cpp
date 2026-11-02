@@ -1,5 +1,3 @@
-// Interfaz tactil para Predictive Input Buffer.
-
 #include <Geode/Geode.hpp>
 #include <Geode/modify/MenuLayer.hpp>
 #include <Geode/modify/PauseLayer.hpp>
@@ -118,9 +116,12 @@ namespace {
             auto makeBtn = [&](const char* text, SEL_MenuHandler cb, float y) {
                 auto spr = ButtonSprite::create(text, "bigFont.fnt", "GJ_button_04.png", 0.5f);
                 if (!spr) return;
+
                 spr->setCascadeColorEnabled(true);
+
                 auto btn = CCMenuItemSpriteExtra::create(spr, this, cb);
                 if (!btn) return;
+
                 btn->setColor(intToColor(ib::cfgColorBtn()));
                 updateBtnText(btn, intToColor(ib::cfgColorBtn()));
                 btn->setPosition({0.f, y});
@@ -132,14 +133,22 @@ namespace {
             makeBtn("Texts", menu_selector(ColorTargetLayer::onText), -40.f);
             makeBtn("Buttons", menu_selector(ColorTargetLayer::onBtn), -100.f);
 
+            // Boton de cierre reducido y colocado dentro del panel.
             auto sprClose = ButtonSprite::create("X", "bigFont.fnt", "GJ_button_04.png", 0.5f);
             if (sprClose) {
                 sprClose->setCascadeColorEnabled(true);
-                auto closeBtn = CCMenuItemSpriteExtra::create(sprClose, this, menu_selector(ColorTargetLayer::onClose));
+
+                auto closeBtn = CCMenuItemSpriteExtra::create(
+                    sprClose,
+                    this,
+                    menu_selector(ColorTargetLayer::onClose)
+                );
+
                 if (closeBtn) {
                     closeBtn->setColor(intToColor(ib::cfgColorBtn()));
                     updateBtnText(closeBtn, intToColor(ib::cfgColorBtn()));
-                    closeBtn->setPosition({75.f, 135.f});
+                    closeBtn->setScale(0.75f);
+                    closeBtn->setPosition({85.f, 140.f});
                     menu->addChild(closeBtn);
                 }
             }
@@ -166,9 +175,13 @@ namespace {
         void openColorPicker(int currentColor, std::function<void(ccColor3B)> callback) {
             auto popup = ColorPickPopup::create(intToColor(currentColor));
             if (!popup) return;
-            popup->setCallback(geode::Function<void(cocos2d::ccColor4B const&)>([callback](cocos2d::ccColor4B const& c) {
-                callback({c.r, c.g, c.b});
-            }));
+
+            popup->setCallback(geode::Function<void(cocos2d::ccColor4B const&)>(
+                [callback](cocos2d::ccColor4B const& c) {
+                    callback({c.r, c.g, c.b});
+                }
+            ));
+
             popup->show();
             this->onClose(nullptr);
         }
@@ -208,7 +221,11 @@ namespace {
 
             auto cleanup = CCCallFunc::create(this, callfunc_selector(ColorTargetLayer::doCleanup));
             m_dimBg->runAction(CCFadeTo::create(0.15f, 0));
-            m_panel->runAction(CCSequence::create(CCEaseBackIn::create(CCScaleTo::create(0.15f, 0.7f)), cleanup, nullptr));
+            m_panel->runAction(CCSequence::create(
+                CCEaseBackIn::create(CCScaleTo::create(0.15f, 0.7f)),
+                cleanup,
+                nullptr
+            ));
         }
 
         void doCleanup() {
@@ -279,8 +296,6 @@ namespace {
             return true;
         }
 
-        // Mantiene el HUD dentro de los limites del padre.
-        // Esta implementacion supone que el padre no tiene rotacion.
         CCPoint clampPos(CCPoint p) {
             auto winSize = CCDirector::sharedDirector()->getWinSize();
             float minX = 0.f;
@@ -658,7 +673,11 @@ namespace {
             auto cleanup = CCCallFunc::create(this, callfunc_selector(IBMenu::doCleanup));
 
             m_dimBg->runAction(CCFadeTo::create(0.15f, 0));
-            m_panel->runAction(CCSequence::create(CCEaseBackIn::create(CCScaleTo::create(0.15f, 0.7f)), cleanup, nullptr));
+            m_panel->runAction(CCSequence::create(
+                CCEaseBackIn::create(CCScaleTo::create(0.15f, 0.7f)),
+                cleanup,
+                nullptr
+            ));
         }
 
         void doCleanup() {
@@ -864,3 +883,4 @@ class $modify(IBPauseLayer, PauseLayer) {
         ib::openMenu();
     }
 };
+
