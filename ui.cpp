@@ -45,8 +45,15 @@ namespace {
     CCDrawNode* createPanelFill(float width, float height, ccColor3B color) {
         auto node = CCDrawNode::create();
         if (!node) return nullptr;
-        
-        node->drawRect({0, 0}, {width, height}, {color.r, color.g, color.b, 255});
+
+        ccColor4F fill = {
+            color.r / 255.f,
+            color.g / 255.f,
+            color.b / 255.f,
+            1.f
+        };
+
+        node->drawRect({0, 0}, {width, height}, fill, 0.f, fill);
         return node;
     }
 
@@ -91,7 +98,7 @@ namespace {
             m_bgFill = createPanelFill(kW - 6.f, kH - 6.f, intToColor(ib::cfgColorBg()));
             if (m_bgFill) {
                 m_bgFill->setPosition({3.f, 3.f});
-                m_panel->addChild(m_bgFill, 1); 
+                m_panel->addChild(m_bgFill, 1);
             }
 
             auto title = CCLabelBMFont::create("Select Target", "bigFont.fnt");
@@ -166,10 +173,33 @@ namespace {
             this->onClose(nullptr);
         }
 
-        void onBg(CCObject*) { openColorPicker(ib::cfgColorBg(), [](ccColor3B c) { ib::cfgSetColorBg(colorToInt(c)); ib::onStageChanged(); }); }
-        void onBorder(CCObject*) { openColorPicker(ib::cfgColorBorder(), [](ccColor3B c) { ib::cfgSetColorBorder(colorToInt(c)); ib::onStageChanged(); }); }
-        void onText(CCObject*) { openColorPicker(ib::cfgColorText(), [](ccColor3B c) { ib::cfgSetColorText(colorToInt(c)); ib::onStageChanged(); }); }
-        void onBtn(CCObject*) { openColorPicker(ib::cfgColorBtn(), [](ccColor3B c) { ib::cfgSetColorBtn(colorToInt(c)); ib::onStageChanged(); }); }
+        void onBg(CCObject*) {
+            openColorPicker(ib::cfgColorBg(), [](ccColor3B c) {
+                ib::cfgSetColorBg(colorToInt(c));
+                ib::onStageChanged();
+            });
+        }
+
+        void onBorder(CCObject*) {
+            openColorPicker(ib::cfgColorBorder(), [](ccColor3B c) {
+                ib::cfgSetColorBorder(colorToInt(c));
+                ib::onStageChanged();
+            });
+        }
+
+        void onText(CCObject*) {
+            openColorPicker(ib::cfgColorText(), [](ccColor3B c) {
+                ib::cfgSetColorText(colorToInt(c));
+                ib::onStageChanged();
+            });
+        }
+
+        void onBtn(CCObject*) {
+            openColorPicker(ib::cfgColorBtn(), [](ccColor3B c) {
+                ib::cfgSetColorBtn(colorToInt(c));
+                ib::onStageChanged();
+            });
+        }
 
         void onClose(CCObject*) {
             if (m_closing) return;
@@ -190,11 +220,17 @@ namespace {
             this->removeFromParentAndCleanup(true);
         }
 
-        void keyBackClicked() override { this->onClose(nullptr); }
+        void keyBackClicked() override {
+            this->onClose(nullptr);
+        }
+
         void registerWithTouchDispatcher() override {
             CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this, -700, true);
         }
-        bool ccTouchBegan(CCTouch*, CCEvent*) override { return true; }
+
+        bool ccTouchBegan(CCTouch*, CCEvent*) override {
+            return true;
+        }
     };
 
     class IBHud : public CCLayer {
@@ -205,12 +241,17 @@ namespace {
 
         static IBHud* create() {
             auto ret = new IBHud();
-            if (ret && ret->setup()) { ret->autorelease(); return ret; }
+            if (ret && ret->setup()) {
+                ret->autorelease();
+                return ret;
+            }
             delete ret;
             return nullptr;
         }
 
-        ~IBHud() override { if (s_inst == this) s_inst = nullptr; }
+        ~IBHud() override {
+            if (s_inst == this) s_inst = nullptr;
+        }
 
         bool setup() {
             if (!CCLayer::init()) return false;
@@ -238,27 +279,25 @@ namespace {
             return true;
         }
 
-        // NOTA: Esta función garantiza que el HUD permanezca dentro de los
-        // límites del padre. Está diseñada para padres SIN rotación (el caso
-        // estándar en Geometry Dash). Si el padre tuviera rotación, se
-        // necesitaría una transformación más compleja para garantizar el
-        // encuadre. Para el propósito de este mod, esta implementación es
-        // suficiente y segura.
-        CCPoint clampPos(CCPoint p) const {
+        // Mantiene el HUD dentro de los limites del padre.
+        // Esta implementacion supone que el padre no tiene rotacion.
+        CCPoint clampPos(CCPoint p) {
             auto winSize = CCDirector::sharedDirector()->getWinSize();
-            float minX = 0.f, maxX = winSize.width - kW;
-            float minY = 0.f, maxY = winSize.height - kH;
+            float minX = 0.f;
+            float maxX = winSize.width - kW;
+            float minY = 0.f;
+            float maxY = winSize.height - kH;
 
             if (auto parent = this->getParent()) {
                 CCPoint bl = parent->convertToNodeSpace({0.f, 0.f});
                 CCPoint tr = parent->convertToNodeSpace({winSize.width, winSize.height});
-                
+
                 minX = std::min(bl.x, tr.x);
                 maxX = std::max(bl.x, tr.x) - kW;
                 minY = std::min(bl.y, tr.y);
                 maxY = std::max(bl.y, tr.y) - kH;
             }
-            
+
             if (maxX < minX) maxX = minX;
             if (maxY < minY) maxY = minY;
 
@@ -279,6 +318,7 @@ namespace {
             m_bg->setVisible(ib::cfgShowBg());
             m_bg->setOpacity(static_cast<unsigned char>(a * 3 / 4));
             m_label->setOpacity(static_cast<unsigned char>(a));
+
             std::string text = std::string("PB ") + ib::kStages[s].label;
             m_label->setString(text.c_str());
         }
@@ -292,7 +332,10 @@ namespace {
         void update(float dt) override {
             if (m_flash > 0.f) {
                 m_flash -= dt;
-                if (m_flash <= 0.f) { m_flash = 0.f; m_bg->setColor({0, 0, 0}); }
+                if (m_flash <= 0.f) {
+                    m_flash = 0.f;
+                    m_bg->setColor({0, 0, 0});
+                }
             }
         }
 
@@ -305,27 +348,36 @@ namespace {
 
             auto parent = this->getParent();
             if (!parent) return false;
-            
+
             CCPoint touchPos = parent->convertToNodeSpace(touch->getLocation());
             const CCPoint local = this->convertToNodeSpace(touch->getLocation());
-            if (local.x < 0.f || local.y < 0.f || local.x > kW || local.y > kH) return false;
-            
+
+            if (local.x < 0.f || local.y < 0.f || local.x > kW || local.y > kH) {
+                return false;
+            }
+
             m_dragging = false;
             m_start = touchPos;
+
             const CCPoint pos = this->getPosition();
             m_offset = CCPoint(pos.x - m_start.x, pos.y - m_start.y);
+
             return true;
         }
 
         void ccTouchMoved(CCTouch* touch, CCEvent*) override {
             auto parent = this->getParent();
             if (!parent) return;
-            
+
             CCPoint loc = parent->convertToNodeSpace(touch->getLocation());
-            
+
             const float dx = loc.x - m_start.x;
             const float dy = loc.y - m_start.y;
-            if (!m_dragging && (dx * dx + dy * dy) > 100.f) m_dragging = true;
+
+            if (!m_dragging && (dx * dx + dy * dy) > 100.f) {
+                m_dragging = true;
+            }
+
             if (m_dragging) {
                 this->setPosition(clampPos(CCPoint(loc.x + m_offset.x, loc.y + m_offset.y)));
             }
@@ -339,10 +391,13 @@ namespace {
             } else {
                 ib::cycleStage();
             }
+
             m_dragging = false;
         }
 
-        void ccTouchCancelled(CCTouch*, CCEvent*) override { m_dragging = false; }
+        void ccTouchCancelled(CCTouch*, CCEvent*) override {
+            m_dragging = false;
+        }
 
     private:
         CCLayerColor* m_bg = nullptr;
@@ -361,9 +416,9 @@ namespace {
 
         static IBMenu* create() {
             auto ret = new IBMenu();
-            if (ret && ret->setup()) { 
-                ret->autorelease(); 
-                return ret; 
+            if (ret && ret->setup()) {
+                ret->autorelease();
+                return ret;
             }
             delete ret;
             return nullptr;
@@ -375,16 +430,19 @@ namespace {
 
         bool setup() {
             if (!CCLayer::init()) return false;
+
             this->setTouchEnabled(true);
             this->setKeypadEnabled(true);
 
             auto win = CCDirector::sharedDirector()->getWinSize();
+
             m_dimBg = CCLayerColor::create(ccc4(0, 0, 0, 150), win.width, win.height);
             if (!m_dimBg) return false;
             this->addChild(m_dimBg, -1);
 
             m_panel = CCLayer::create();
             if (!m_panel) return false;
+
             m_panel->setContentSize({kW, kH});
             m_panel->setAnchorPoint({0.f, 0.f});
             m_panel->setPosition({(win.width - kW) / 2.f, (win.height - kH) / 2.f});
@@ -409,6 +467,7 @@ namespace {
 
             m_menu = CCMenu::create();
             if (!m_menu) return false;
+
             m_menu->setPosition({0.f, 0.f});
             m_menu->setTouchPriority(-701);
             m_panel->addChild(m_menu, 3);
@@ -427,17 +486,22 @@ namespace {
             for (int i = 0; i < ib::kStageCount; ++i) {
                 auto spr = ButtonSprite::create(ib::kStages[i].label, 50, true, "bigFont.fnt", "GJ_button_04.png", 28.f, 0.5f);
                 if (!spr) continue;
+
                 spr->setCascadeColorEnabled(true);
+
                 auto btn = CCMenuItemSpriteExtra::create(spr, nullptr, this, menu_selector(IBMenu::onStage));
                 if (!btn) continue;
+
                 btn->setTag(i);
                 btn->setPosition({stageX(i), kStageY});
                 m_menu->addChild(btn);
+
                 m_stageBtns[i] = btn;
                 m_allButtons.push_back(btn);
             }
 
             m_desc = addLabel("", "chatFont.fnt", 0.8f, {kW / 2.f, kStageY - 30.f});
+
             addToggle("Floating button (in level)", 160.f, ib::cfgShowButton(), menu_selector(IBMenu::onToggleHud));
             addToggle("Floating background", 134.f, ib::cfgShowBg(), menu_selector(IBMenu::onToggleBg));
 
@@ -446,6 +510,7 @@ namespace {
             auto sprMinus = ButtonSprite::create("-", 28, true, "bigFont.fnt", "GJ_button_04.png", 26.f, 0.7f);
             if (sprMinus) {
                 sprMinus->setCascadeColorEnabled(true);
+
                 auto minus = CCMenuItemSpriteExtra::create(sprMinus, nullptr, this, menu_selector(IBMenu::onOpacity));
                 if (minus) {
                     minus->setTag(-1);
@@ -458,6 +523,7 @@ namespace {
             auto sprPlus = ButtonSprite::create("+", 28, true, "bigFont.fnt", "GJ_button_04.png", 26.f, 0.7f);
             if (sprPlus) {
                 sprPlus->setCascadeColorEnabled(true);
+
                 auto plus = CCMenuItemSpriteExtra::create(sprPlus, nullptr, this, menu_selector(IBMenu::onOpacity));
                 if (plus) {
                     plus->setTag(1);
@@ -470,6 +536,7 @@ namespace {
             auto sprOk = ButtonSprite::create("OK", 80, true, "bigFont.fnt", "GJ_button_04.png", 30.f, 0.8f);
             if (sprOk) {
                 sprOk->setCascadeColorEnabled(true);
+
                 auto ok = CCMenuItemSpriteExtra::create(sprOk, nullptr, this, menu_selector(IBMenu::onClose));
                 if (ok) {
                     ok->setPosition({kW / 2.f, 30.f});
@@ -493,11 +560,27 @@ namespace {
         void applyColors() {
             if (m_bgFill) {
                 m_bgFill->clear();
+
                 auto col = intToColor(ib::cfgColorBg());
-                m_bgFill->drawRect({0, 0}, {kW - 6.f, kH - 6.f}, {col.r, col.g, col.b, 255});
+
+                ccColor4F fill = {
+                    col.r / 255.f,
+                    col.g / 255.f,
+                    col.b / 255.f,
+                    1.f
+                };
+
+                m_bgFill->drawRect({0, 0}, {kW - 6.f, kH - 6.f}, fill, 0.f, fill);
             }
-            if (m_borderSpr) m_borderSpr->setColor(intToColor(ib::cfgColorBorder()));
-            for (auto lbl : m_allLabels) if (lbl) lbl->setColor(intToColor(ib::cfgColorText()));
+
+            if (m_borderSpr) {
+                m_borderSpr->setColor(intToColor(ib::cfgColorBorder()));
+            }
+
+            for (auto lbl : m_allLabels) {
+                if (lbl) lbl->setColor(intToColor(ib::cfgColorText()));
+            }
+
             for (auto btn : m_allButtons) {
                 if (btn) {
                     btn->setColor(intToColor(ib::cfgColorBtn()));
@@ -514,12 +597,16 @@ namespace {
 
             for (int i = 0; i < ib::kStageCount; ++i) {
                 if (!m_stageBtns[i]) continue;
+
                 m_stageBtns[i]->setColor(btnCol);
                 m_stageBtns[i]->setScale(i == s ? 1.1f : 1.f);
                 updateBtnText(m_stageBtns[i], btnCol);
             }
 
-            if (m_desc) m_desc->setString(ib::kStages[s].desc);
+            if (m_desc) {
+                m_desc->setString(ib::kStages[s].desc);
+            }
+
             if (m_opLabel) {
                 std::string op = "Button opacity: " + std::to_string(ib::cfgOpacity()) + "%";
                 m_opLabel->setString(op.c_str());
@@ -531,57 +618,99 @@ namespace {
             if (!scene) return;
 
             this->setVisible(false);
+
             auto popup = ColorTargetLayer::create();
             if (popup) {
                 popup->setID("color-target-layer");
                 scene->addChild(popup, 100000);
             } else {
-                this->setVisible(true); 
+                this->setVisible(true);
             }
         }
 
-        void onStage(CCObject* sender) { ib::setStage(static_cast<CCNode*>(sender)->getTag()); this->refresh(); }
-        void onToggleHud(CCObject* sender) { ib::cfgSetShowButton(static_cast<CCMenuItemToggler*>(sender)->isToggled()); ib::onStageChanged(); }
-        void onToggleBg(CCObject* sender) { ib::cfgSetShowBg(static_cast<CCMenuItemToggler*>(sender)->isToggled()); ib::onStageChanged(); }
-        void onOpacity(CCObject* sender) { ib::cfgSetOpacity(ib::cfgOpacity() + static_cast<CCNode*>(sender)->getTag() * 10); ib::onStageChanged(); this->refresh(); }
+        void onStage(CCObject* sender) {
+            ib::setStage(static_cast<CCNode*>(sender)->getTag());
+            this->refresh();
+        }
+
+        void onToggleHud(CCObject* sender) {
+            ib::cfgSetShowButton(static_cast<CCMenuItemToggler*>(sender)->isToggled());
+            ib::onStageChanged();
+        }
+
+        void onToggleBg(CCObject* sender) {
+            ib::cfgSetShowBg(static_cast<CCMenuItemToggler*>(sender)->isToggled());
+            ib::onStageChanged();
+        }
+
+        void onOpacity(CCObject* sender) {
+            ib::cfgSetOpacity(ib::cfgOpacity() + static_cast<CCNode*>(sender)->getTag() * 10);
+            ib::onStageChanged();
+            this->refresh();
+        }
 
         void onClose(CCObject*) {
             if (m_closing) return;
+
             m_closing = true;
             this->setTouchEnabled(false);
 
             auto cleanup = CCCallFunc::create(this, callfunc_selector(IBMenu::doCleanup));
+
             m_dimBg->runAction(CCFadeTo::create(0.15f, 0));
             m_panel->runAction(CCSequence::create(CCEaseBackIn::create(CCScaleTo::create(0.15f, 0.7f)), cleanup, nullptr));
         }
 
-        void doCleanup() { this->removeFromParentAndCleanup(true); }
-        void registerWithTouchDispatcher() override { CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this, -700, true); }
-        bool ccTouchBegan(CCTouch*, CCEvent*) override { return true; }
-        void keyBackClicked() override { this->onClose(nullptr); }
+        void doCleanup() {
+            this->removeFromParentAndCleanup(true);
+        }
+
+        void registerWithTouchDispatcher() override {
+            CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this, -700, true);
+        }
+
+        bool ccTouchBegan(CCTouch*, CCEvent*) override {
+            return true;
+        }
+
+        void keyBackClicked() override {
+            this->onClose(nullptr);
+        }
 
     private:
         static constexpr float kW = 440.f;
         static constexpr float kH = 300.f;
         static constexpr float kStageY = 218.f;
 
-        static float stageX(int i) { return kW / 2.f + (i - 2.5f) * 72.f; }
+        static float stageX(int i) {
+            return kW / 2.f + (i - 2.5f) * 72.f;
+        }
 
-        CCLabelBMFont* addLabel(const char* text, const char* font, float scale, CCPoint pos, CCPoint anchor = {0.5f, 0.5f}) {
+        CCLabelBMFont* addLabel(
+            const char* text,
+            const char* font,
+            float scale,
+            CCPoint pos,
+            CCPoint anchor = {0.5f, 0.5f}
+        ) {
             auto lbl = CCLabelBMFont::create(text, font);
             if (!lbl) return nullptr;
+
             lbl->setScale(scale);
             lbl->setAnchorPoint(anchor);
             lbl->setPosition(pos);
             m_panel->addChild(lbl, 2);
+
             m_allLabels.push_back(lbl);
             return lbl;
         }
 
         void addToggle(const char* text, float y, bool on, SEL_MenuHandler cb) {
             addLabel(text, "bigFont.fnt", 0.38f, {26.f, y}, {0.f, 0.5f});
+
             auto toggler = CCMenuItemToggler::createWithStandardSprites(this, cb, 0.6f);
             if (!toggler) return;
+
             toggler->toggle(on);
             toggler->setPosition({kW - 40.f, y});
             m_menu->addChild(toggler);
@@ -592,12 +721,16 @@ namespace {
         CCMenu* m_menu = nullptr;
         CCDrawNode* m_bgFill = nullptr;
         CCScale9Sprite* m_borderSpr = nullptr;
+
         CCMenuItemSpriteExtra* m_stageBtns[ib::kStageCount] = {nullptr};
+
         CCLabelBMFont* m_titleLabel = nullptr;
         CCLabelBMFont* m_desc = nullptr;
         CCLabelBMFont* m_opLabel = nullptr;
+
         std::vector<CCLabelBMFont*> m_allLabels;
         std::vector<CCMenuItemSpriteExtra*> m_allButtons;
+
         bool m_closing = false;
     };
 
@@ -606,9 +739,12 @@ namespace {
     CCMenuItemSpriteExtra* makeIBButton(CCObject* target, SEL_MenuHandler cb) {
         auto spr = ButtonSprite::create("PB", 36, true, "bigFont.fnt", "GJ_button_04.png", 30.f, 0.7f);
         if (!spr) return nullptr;
+
         spr->setCascadeColorEnabled(true);
+
         auto btn = CCMenuItemSpriteExtra::create(spr, nullptr, target, cb);
         if (!btn) return nullptr;
+
         btn->setID("ai.predictivebuffer/ib-button");
         return btn;
     }
@@ -616,20 +752,26 @@ namespace {
 }
 
 namespace ib {
+
     void onStageChanged() {
-        if (IBHud::s_inst) IBHud::s_inst->refresh();
+        if (IBHud::s_inst) {
+            IBHud::s_inst->refresh();
+        }
+
         if (IBMenu::s_inst) {
             IBMenu::s_inst->applyColors();
             IBMenu::s_inst->refresh();
         }
     }
-    
-    void onSaved(int) { if (IBHud::s_inst) IBHud::s_inst->flash(); }
-    
+
+    void onSaved(int) {
+        if (IBHud::s_inst) IBHud::s_inst->flash();
+    }
+
     void attachHud(CCNode* parent) {
         if (!parent) return;
         if (parent->getChildByID("ai.predictivebuffer/hud")) return;
-        
+
         auto hud = IBHud::create();
         if (hud) {
             hud->setID("ai.predictivebuffer/hud");
@@ -637,61 +779,88 @@ namespace ib {
             hud->setPosition(hud->clampPos(hud->getPosition()));
         }
     }
-    
+
     void openMenu() {
         auto scene = CCDirector::sharedDirector()->getRunningScene();
         if (!scene) return;
+
         if (scene->getChildByID("ai.predictivebuffer/menu")) return;
+
         auto menu = IBMenu::create();
         if (!menu) return;
+
         menu->setID("ai.predictivebuffer/menu");
         scene->addChild(menu, 100000);
     }
+
 }
 
 class $modify(IBMenuLayer, MenuLayer) {
     bool init() {
         if (!MenuLayer::init()) return false;
+
         auto btn = makeIBButton(this, menu_selector(IBMenuLayer::onIB));
         if (!btn) return true;
+
         CCMenu* menu = nullptr;
-        if (auto node = this->getChildByID("bottom-menu")) menu = typeinfo_cast<CCMenu*>(node);
+
+        if (auto node = this->getChildByID("bottom-menu")) {
+            menu = typeinfo_cast<CCMenu*>(node);
+        }
+
         if (menu) {
             menu->addChild(btn);
             menu->updateLayout();
         } else {
             auto win = CCDirector::sharedDirector()->getWinSize();
+
             menu = CCMenu::create();
             if (!menu) return true;
+
             menu->setPosition({0.f, 0.f});
             btn->setPosition({36.f, win.height - 30.f});
             menu->addChild(btn);
             this->addChild(menu, 100);
         }
+
         return true;
     }
-    void onIB(CCObject*) { ib::openMenu(); }
+
+    void onIB(CCObject*) {
+        ib::openMenu();
+    }
 };
 
 class $modify(IBPauseLayer, PauseLayer) {
     void customSetup() {
         PauseLayer::customSetup();
+
         auto btn = makeIBButton(this, menu_selector(IBPauseLayer::onIB));
         if (!btn) return;
+
         CCMenu* menu = nullptr;
-        if (auto node = this->getChildByID("right-button-menu")) menu = typeinfo_cast<CCMenu*>(node);
+
+        if (auto node = this->getChildByID("right-button-menu")) {
+            menu = typeinfo_cast<CCMenu*>(node);
+        }
+
         if (menu) {
             menu->addChild(btn);
             menu->updateLayout();
         } else {
             auto win = CCDirector::sharedDirector()->getWinSize();
+
             menu = CCMenu::create();
             if (!menu) return;
+
             menu->setPosition({0.f, 0.f});
             btn->setPosition({win.width - 36.f, win.height - 30.f});
             menu->addChild(btn);
             this->addChild(menu, 100);
         }
     }
-    void onIB(CCObject*) { ib::openMenu(); }
+
+    void onIB(CCObject*) {
+        ib::openMenu();
+    }
 };
