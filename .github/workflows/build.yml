@@ -12,23 +12,29 @@ jobs:
         include:
           - target: Android64
           - target: Android32
+
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: geode-sdk/build-geode-mod@main
         with:
           target: ${{ matrix.target }}
           combine: true
           android-min-sdk: 23
-          sdk: latest
+          sdk: given
 
   package:
     needs: build
     runs-on: ubuntu-latest
+
     steps:
       - uses: geode-sdk/build-geode-mod/combine@main
         id: combine
+
       - uses: actions/upload-artifact@v4
         with:
           name: Build Output
           path: ${{ steps.combine.outputs.build-output }}
+
