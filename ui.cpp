@@ -139,7 +139,7 @@ namespace {
                 if (closeBtn) {
                     closeBtn->setColor(intToColor(ib::cfgColorBtn()));
                     updateBtnText(closeBtn, intToColor(ib::cfgColorBtn()));
-                    closeBtn->setPosition({100.f, 135.f});
+                    closeBtn->setPosition({75.f, 135.f});
                     menu->addChild(closeBtn);
                 }
             }
