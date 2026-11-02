@@ -1,12 +1,10 @@
-cmake_minimum_required(VERSION 3.21)
-set(CMAKE_CXX_STANDARD 20)
+cmake_minimum_required(VERSION 3.29)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
-# IMPORTANTE: Este nombre debe ser idéntico al "id" de tu mod.json
 project(ai.predictivebuffer VERSION 1.1.0)
 
-# Todos los .cpp de la raiz del repositorio
 file(GLOB SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
